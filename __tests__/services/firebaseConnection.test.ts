@@ -1,22 +1,30 @@
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
+);
+
 jest.mock('firebase/app', () => ({
   initializeApp: jest.fn(() => ({ name: '[DEFAULT]' })),
   getApps: jest.fn(() => []),
 }));
+
 jest.mock('firebase/auth', () => ({
   getAuth: jest.fn(() => ({ currentUser: null })),
+  initializeAuth: jest.fn(() => ({ currentUser: null })),
+  getReactNativePersistence: jest.fn((storage) => storage),
 }));
+
 jest.mock('firebase/firestore', () => ({
   getFirestore: jest.fn(() => ({ type: 'firestore' })),
 }));
 
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, initializeAuth, getReactNativePersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import app, { auth, db } from '../../src/config/firebase';
 
 const mockInitializeApp = initializeApp as jest.Mock;
 const mockGetApps = getApps as jest.Mock;
-const mockGetAuth = getAuth as jest.Mock;
+const mockInitializeAuth = initializeAuth as jest.Mock;
 const mockGetFirestore = getFirestore as jest.Mock;
 
 describe('Firebase Connection', () => {
@@ -37,9 +45,9 @@ describe('Firebase Connection', () => {
     expect(configPassado).toHaveProperty('appId');
   });
 
-  it('deve criar Auth e Firestore usando o app inicializado', () => {
+  it('deve criar Auth com persistencia AsyncStorage e Firestore usando o app inicializado', () => {
     const appCriado = mockInitializeApp.mock.results[0].value;
-    expect(mockGetAuth).toHaveBeenCalledWith(appCriado);
+    expect(mockInitializeAuth).toHaveBeenCalledWith(appCriado, expect.objectContaining({ persistence: expect.anything() }));
     expect(mockGetFirestore).toHaveBeenCalledWith(appCriado);
   });
 
