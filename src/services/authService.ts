@@ -25,7 +25,7 @@ export function getAuthErrorMessage(errorCode: string): string {
     case 'auth/invalid-credential':
       return 'E-mail ou senha incorretos.';
     case 'auth/weak-password':
-      return 'A senha é muito fraca. Escolha uma senha com no mínimo 6 caracteres.';
+      return 'A senha é muito fraca. Escolha uma senha com no mínimo 8 caracteres.';
     case 'auth/too-many-requests':
       return 'Muitas tentativas malsucedidas. Por favor, tente novamente mais tarde.';
     case 'auth/network-request-failed':
