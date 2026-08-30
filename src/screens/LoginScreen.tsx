@@ -228,7 +228,7 @@ export default function LoginScreen({ navigation, route }: { navigation: Navigat
               <Ionicons
                 name="book"
                 size={32}
-                color={isDark ? "#FFFFFF" : "#000000"}
+                color={theme.accent}
               />
             </View>
             <Text style={s.brandName}>MyLib</Text>
@@ -242,7 +242,7 @@ export default function LoginScreen({ navigation, route }: { navigation: Navigat
 
             {!!generalError && (
               <View style={s.errorBanner}>
-                <Ionicons name="alert-circle-outline" size={18} color="#F87171" style={{ marginRight: 8 }} />
+                <Ionicons name="alert-circle-outline" size={18} color={theme.danger} style={{ marginRight: 8 }} />
                 <Text style={s.errorBannerText}>{generalError}</Text>
               </View>
             )}
@@ -501,16 +501,16 @@ function makeStyles(t: ThemeType) {
       elevation: 4,
     },
     inputContainerError: {
-      borderColor: "#F87171",
-      backgroundColor: t.bg === DARK.bg ? "#2A1A1A" : "#FFF5F5",
-      shadowColor: "#F87171",
+      borderColor: t.danger,
+      backgroundColor: t.bg === DARK.bg ? "rgba(224, 115, 107, 0.1)" : "#FFF5F5",
+      shadowColor: t.danger,
       shadowOffset: { width: 0, height: 0 },
       shadowOpacity: 0.25,
       shadowRadius: 8,
       elevation: 4,
     },
     errorText: {
-      color: "#F87171",
+      color: t.danger,
       fontSize: 12,
       marginTop: 5,
       marginLeft: 2,
@@ -519,8 +519,8 @@ function makeStyles(t: ThemeType) {
     errorBanner: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: "rgba(248, 113, 113, 0.12)",
-      borderColor: "rgba(248, 113, 113, 0.3)",
+      backgroundColor: "rgba(224, 115, 107, 0.12)",
+      borderColor: "rgba(224, 115, 107, 0.3)",
       borderWidth: 1,
       borderRadius: 12,
       paddingHorizontal: 14,
@@ -528,7 +528,7 @@ function makeStyles(t: ThemeType) {
       marginBottom: 16,
     },
     errorBannerText: {
-      color: "#F87171",
+      color: t.danger,
       fontSize: 13,
       fontWeight: "600",
       flex: 1,

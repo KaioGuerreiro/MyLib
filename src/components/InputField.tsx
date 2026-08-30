@@ -44,7 +44,7 @@ export function InputField({
     : null;
 
   const iconColor = hasError
-    ? '#F87171'
+    ? theme.danger
     : isFocused
     ? theme.primary
     : theme.iconColor;
@@ -75,7 +75,7 @@ export function InputField({
           </Pressable>
         )}
         {hasError && (
-          <Ionicons name="alert-circle" size={18} color="#F87171" />
+          <Ionicons name="alert-circle" size={18} color={theme.danger} />
         )}
       </Pressable>
       {hasError && errorMessage ? (

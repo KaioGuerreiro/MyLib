@@ -88,7 +88,7 @@ export default function HomeScreen() {
               disabled={sendingVerification}
               activeOpacity={0.8}
             >
-              <Ionicons name="mail-unread-outline" size={18} color="#F59E0B" style={{ marginRight: 8 }} />
+              <Ionicons name="mail-unread-outline" size={18} color={theme.warning} style={{ marginRight: 8 }} />
               <Text style={s.verifyBannerText}>
                 {sendingVerification ? 'Enviando e-mail...' : 'E-mail não verificado. Clique para reenviar!'}
               </Text>
@@ -198,8 +198,8 @@ function makeStyles(t: ThemeType) {
     verifyBanner: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: 'rgba(245, 158, 11, 0.15)',
-      borderColor: 'rgba(245, 158, 11, 0.3)',
+      backgroundColor: 'rgba(224, 165, 78, 0.15)',
+      borderColor: 'rgba(224, 165, 78, 0.3)',
       borderWidth: 1,
       borderRadius: 12,
       paddingHorizontal: 16,
@@ -207,21 +207,21 @@ function makeStyles(t: ThemeType) {
       marginBottom: 28,
     },
     verifyBannerText: {
-      color: '#F59E0B',
+      color: t.warning,
       fontSize: 13,
       fontWeight: '600',
     },
 
     /* Botão Sair */
     logoutButton: {
-      backgroundColor: '#EF4444',
+      backgroundColor: t.danger,
       borderRadius: 14,
       height: 52,
       paddingHorizontal: 32,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      shadowColor: '#EF4444',
+      shadowColor: t.danger,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.3,
       shadowRadius: 8,
