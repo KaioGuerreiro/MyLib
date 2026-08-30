@@ -1,0 +1,42 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    match /usuarios/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId)
+        && request.resource.data.keys().hasOnly([
+          'id', 'nome', 'email', 'xpTotal', 'nivelAtual', 'ofensivaAtual', 'createdAt'
+        ])
+        && request.resource.data.id == userId
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.xpTotal == 0
+        && request.resource.data.nivelAtual == 1
+        && request.resource.data.ofensivaAtual == 0;
+      allow update: if isOwner(userId)
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['nome', 'updatedAt']);
+      allow delete: if false;
+
+      match /estante/{itemId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && request.resource.data.usuarioId == userId
+          && request.resource.data.status in ['LENDO', 'LIDO', 'NA_FILA']
+          && request.resource.data.progressoPaginas is int
+          && request.resource.data.progressoPaginas >= 0;
+        allow update: if isOwner(userId)
+          && request.resource.data.usuarioId == resource.data.usuarioId
+          && request.resource.data.status in ['LENDO', 'LIDO', 'NA_FILA']
+          && request.resource.data.progressoPaginas is int
+          && request.resource.data.progressoPaginas >= 0;
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

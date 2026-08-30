@@ -32,16 +32,18 @@ jest.mock('firebase/firestore', () => ({
   getFirestore: jest.fn(() => ({ type: 'firestore' })),
   doc: jest.fn(),
   getDoc: jest.fn(() => Promise.resolve({ exists: () => false })),
+  collection: jest.fn(),
+  onSnapshot: jest.fn(() => jest.fn()),
 }));
 
 describe('HomeScreen', () => {
-  it('deve renderizar o primeiro nome do usuario e o botao de sair', async () => {
+  it('deve renderizar o nome do usuário e o controle de logout', async () => {
     const initialMetrics = {
       frame: { x: 0, y: 0, width: 320, height: 640 },
       insets: { top: 0, left: 0, right: 0, bottom: 0 },
     };
 
-    const { getByText } = render(
+    const { getByLabelText, getByText } = render(
       <SafeAreaProvider initialMetrics={initialMetrics}>
         <ThemeProvider>
           <AuthProvider>
@@ -52,8 +54,9 @@ describe('HomeScreen', () => {
     );
 
     await waitFor(() => {
-      expect(getByText('Bem-vindo de volta,')).toBeTruthy();
-      expect(getByText('Sair da Conta')).toBeTruthy();
+      expect(getByText('Kaio Guerreiro')).toBeTruthy();
+      expect(getByText(/Olá, Kaio/)).toBeTruthy();
+      expect(getByLabelText('Opções de perfil e logout')).toBeTruthy();
     });
   });
 });

@@ -7,7 +7,8 @@ import {
   signUpUser, 
   sendPasswordReset, 
   signOutUser, 
-  fetchUserProfile 
+  fetchUserProfile,
+  subscribeToUserProfile
 } from '../services/authService';
 
 interface AuthContextData {
@@ -50,17 +51,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    let unsubscribeProfile: (() => void) | null = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
         await loadUserData(currentUser);
+        // Escuta atualizações em tempo real no documento do usuário
+        if (unsubscribeProfile) unsubscribeProfile();
+        unsubscribeProfile = subscribeToUserProfile(currentUser.uid, (updatedProfile) => {
+          setUserData(updatedProfile);
+        });
       } else {
+        if (unsubscribeProfile) {
+          unsubscribeProfile();
+          unsubscribeProfile = null;
+        }
         setUserData(null);
       }
-      if (initializing) setInitializing(false);
+      setInitializing(false);
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeProfile) unsubscribeProfile();
+    };
   }, []);
 
   const signIn = async (email: string, senha: string): Promise<User> => {

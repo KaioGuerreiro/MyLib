@@ -7,9 +7,32 @@ import {
   updateProfile,
   User 
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 import { Usuario } from '../models/Usuario';
+import { validatePasswordCriteria } from '../utils/validation';
+
+function normalizeEmail(email: string): string {
+  const normalized = email.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
+    throw new Error('E-mail inválido.');
+  }
+  return normalized;
+}
+
+function normalizeName(nome: string): string {
+  const normalized = nome.trim().replace(/\s+/g, ' ');
+  if (normalized.length < 2 || normalized.length > 80) {
+    throw new Error('Nome inválido.');
+  }
+  return normalized;
+}
+
+function assertStrongPassword(senha: string): void {
+  if (!validatePasswordCriteria(senha).isValid) {
+    throw new Error('Senha não atende aos critérios de segurança.');
+  }
+}
 
 /**
  * Traduz códigos de erro do Firebase Auth para mensagens amigáveis em português.
@@ -41,16 +64,19 @@ export function getAuthErrorMessage(errorCode: string): string {
  * Cadastra um novo usuário no Firebase Auth e cria o perfil no Cloud Firestore.
  */
 export async function signUpUser(nome: string, email: string, senha: string): Promise<Usuario> {
-  const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
+  const normalizedName = normalizeName(nome);
+  const normalizedEmail = normalizeEmail(email);
+  assertStrongPassword(senha);
+  const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, senha);
   const user = userCredential.user;
 
   // Atualiza o nome de exibição no perfil Auth
-  await updateProfile(user, { displayName: nome });
+  await updateProfile(user, { displayName: normalizedName });
 
   const novoUsuario: Usuario = {
     id: user.uid,
-    nome: nome.trim(),
-    email: email.trim().toLowerCase(),
+    nome: normalizedName,
+    email: normalizedEmail,
     xpTotal: 0,
     nivelAtual: 1,
     ofensivaAtual: 0,
@@ -80,7 +106,7 @@ export async function signUpUser(nome: string, email: string, senha: string): Pr
  * Realiza o login de um usuário cadastrado via e-mail e senha.
  */
 export async function signInUser(email: string, senha: string): Promise<User> {
-  const userCredential = await signInWithEmailAndPassword(auth, email, senha);
+  const userCredential = await signInWithEmailAndPassword(auth, normalizeEmail(email), senha);
   return userCredential.user;
 }
 
@@ -88,7 +114,7 @@ export async function signInUser(email: string, senha: string): Promise<User> {
  * Envia um e-mail de redefinição de senha para o endereço informado.
  */
 export async function sendPasswordReset(email: string): Promise<void> {
-  await sendPasswordResetEmail(auth, email);
+  await sendPasswordResetEmail(auth, normalizeEmail(email));
 }
 
 /**
@@ -119,6 +145,36 @@ export async function fetchUserProfile(uid: string): Promise<Usuario | null> {
     console.warn('Não foi possível buscar perfil no Firestore (verifique as regras de segurança):', err?.message || err);
   }
   return null;
+}
+
+/**
+ * Escuta em tempo real as atualizações do perfil do usuário no Firestore.
+ */
+export function subscribeToUserProfile(
+  uid: string,
+  onUpdate: (user: Usuario) => void
+): () => void {
+  if (!uid) return () => {};
+
+  return onSnapshot(
+    doc(db, 'usuarios', uid),
+    (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        onUpdate({
+          id: uid,
+          nome: data.nome || '',
+          email: data.email || '',
+          xpTotal: data.xpTotal !== undefined ? data.xpTotal : 0,
+          nivelAtual: data.nivelAtual !== undefined ? data.nivelAtual : 1,
+          ofensivaAtual: data.ofensivaAtual !== undefined ? data.ofensivaAtual : 0,
+        });
+      }
+    },
+    (err) => {
+      console.warn('Erro ao escutar dados do perfil no Firestore:', err);
+    }
+  );
 }
 
 /**

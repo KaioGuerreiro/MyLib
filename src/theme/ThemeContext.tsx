@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
+import React, { createContext, useContext, useState, useRef } from 'react';
 import { Animated, Easing } from 'react-native';
 import { DARK, LIGHT, ThemeType } from './colors';
 

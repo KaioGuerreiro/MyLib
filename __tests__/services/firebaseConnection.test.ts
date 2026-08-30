@@ -18,7 +18,7 @@ jest.mock('firebase/firestore', () => ({
 }));
 
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, initializeAuth, getReactNativePersistence } from 'firebase/auth';
+import { getAuth, initializeAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import app, { auth, db } from '../../src/config/firebase';
 

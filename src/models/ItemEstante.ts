@@ -1,3 +1,5 @@
+import { Livro } from './Livro';
+
 export type StatusLeitura = 'LENDO' | 'LIDO' | 'NA_FILA';
 
 export interface ItemEstante {
@@ -7,4 +9,5 @@ export interface ItemEstante {
   status: StatusLeitura;
   progressoPaginas: number;
   dataAdicao: Date;
+  livro?: Livro;
 }

@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 
-import { DARK, LIGHT, ThemeType } from "../theme/colors";
+import { DARK, ThemeType } from "../theme/colors";
 import { ThemeSlider } from "../components/ThemeSlider";
 import { InputField } from "../components/InputField";
 import { isValidEmail } from "../utils/validation";
@@ -55,7 +55,7 @@ export default function ForgotPasswordScreen({
     if (route?.params?.isDark !== undefined && route.params.isDark !== isDark) {
       setIsDark(route.params.isDark);
     }
-  }, [route?.params?.isDark]);
+  }, [isDark, route?.params?.isDark, setIsDark]);
 
   const shakeField = (anim: Animated.Value) => {
     anim.setValue(0);

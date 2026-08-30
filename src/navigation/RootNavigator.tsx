@@ -2,7 +2,7 @@ import React from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { AuthNavigator } from './AuthNavigator';
-import HomeScreen from '../screens/HomeScreen';
+import { TabNavigator } from './TabNavigator';
 import { useTheme } from '../theme/ThemeContext';
 
 export function RootNavigator() {
@@ -17,7 +17,7 @@ export function RootNavigator() {
     );
   }
 
-  return user ? <HomeScreen /> : <AuthNavigator />;
+  return user ? <TabNavigator /> : <AuthNavigator />;
 }
 
 const styles = StyleSheet.create({

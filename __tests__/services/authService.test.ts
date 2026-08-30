@@ -75,9 +75,9 @@ describe('AuthService', () => {
       (updateProfile as jest.Mock).mockResolvedValueOnce(undefined);
       (setDoc as jest.Mock).mockResolvedValueOnce(undefined);
 
-      const res = await signUpUser('Kaio Gomes', 'test@example.com', '123456');
+      const res = await signUpUser('Kaio Gomes', 'test@example.com', 'Senha@123');
 
-      expect(createUserWithEmailAndPassword).toHaveBeenCalledWith(expect.anything(), 'test@example.com', '123456');
+      expect(createUserWithEmailAndPassword).toHaveBeenCalledWith(expect.anything(), 'test@example.com', 'Senha@123');
       expect(updateProfile).toHaveBeenCalledWith(mockUser, { displayName: 'Kaio Gomes' });
       expect(setDoc).toHaveBeenCalled();
       expect(res).toEqual({
@@ -88,6 +88,14 @@ describe('AuthService', () => {
         nivelAtual: 1,
         ofensivaAtual: 0,
       });
+    });
+
+    it('deve rejeitar dados inválidos antes de chamar o Firebase', async () => {
+      await expect(signUpUser('A', 'email-invalido', '123456')).rejects.toThrow('Nome inválido');
+      expect(createUserWithEmailAndPassword).not.toHaveBeenCalled();
+
+      await expect(signUpUser('Kaio Gomes', 'test@example.com', '123456')).rejects.toThrow('Senha não atende');
+      expect(createUserWithEmailAndPassword).not.toHaveBeenCalled();
     });
   });
 
