@@ -471,7 +471,8 @@ export default function LibraryScreen() {
                     <Ionicons name="person-outline" size={18} color={theme.textMuted} className="mr-2.5" />
                     <TextInput
                       ref={authorInputRef}
-                      className="flex-1 text-sm h-full text-textPrimary"
+                      className="flex-1 text-sm h-full text-textPrimary py-0 my-0"
+                      style={{ paddingVertical: 0, textAlignVertical: 'center' }}
                       value={customAuthor}
                       onChangeText={setCustomAuthor}
                       placeholder="Ex: J.K. Rowling, Machado de Assis"
@@ -492,7 +493,8 @@ export default function LibraryScreen() {
                     <Ionicons name="book-outline" size={18} color={theme.textMuted} className="mr-2.5" />
                     <TextInput
                       ref={pagesInputRef}
-                      className="flex-1 text-sm h-full text-textPrimary"
+                      className="flex-1 text-sm h-full text-textPrimary py-0 my-0"
+                      style={{ paddingVertical: 0, textAlignVertical: 'center' }}
                       value={customPages}
                       onChangeText={setCustomPages}
                       placeholder="Ex: 350"

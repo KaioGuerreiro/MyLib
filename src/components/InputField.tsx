@@ -15,7 +15,7 @@ interface InputFieldProps {
   onFocus: () => void;
   onBlur: () => void;
   theme: ThemeType;
-  s?: any; // Suporte a estilos legados caso passados
+  s?: any;
   inputProps: React.ComponentProps<typeof TextInput>;
 }
 
@@ -31,7 +31,6 @@ export function InputField({
   onFocus,
   onBlur,
   theme,
-  s,
   inputProps,
 }: InputFieldProps) {
   const localRef = useRef<TextInput>(null);
@@ -52,7 +51,7 @@ export function InputField({
         {label}
       </Text>
       <Pressable
-        className={`flex-row items-center h-13 px-4 rounded-xl border ${
+        className={`flex-row items-center h-14 px-4 rounded-2xl border ${
           hasError
             ? 'border-danger bg-danger/10'
             : isFocused
@@ -69,11 +68,15 @@ export function InputField({
         }}
         onPress={() => ref.current?.focus()}
       >
-        <Ionicons name={icon} size={18} color={iconColor} className="mr-3" />
+        <Ionicons name={icon} size={20} color={iconColor} className="mr-3" />
         <TextInput
           ref={ref}
-          className="flex-1 text-base h-full"
-          style={{ color: theme.text }}
+          className="flex-1 text-[15px] font-medium h-full py-0 my-0"
+          style={{
+            color: theme.text,
+            paddingVertical: 0,
+            textAlignVertical: 'center',
+          }}
           placeholderTextColor={theme.textMuted}
           onFocus={onFocus}
           onBlur={onBlur}

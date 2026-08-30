@@ -378,7 +378,8 @@ export default function SearchScreen() {
           <Ionicons name="search-outline" size={20} color={theme.textMuted} className="mr-3" />
           <TextInput
             ref={inputRef}
-            className="flex-1 text-[15px] font-medium h-full text-textPrimary py-2"
+            className="flex-1 text-[15px] font-medium h-full text-textPrimary py-0 my-0"
+            style={{ paddingVertical: 0, textAlignVertical: 'center' }}
             placeholder="Buscar por título, autor ou ISBN..."
             placeholderTextColor={theme.textMuted}
             value={query}
@@ -724,7 +725,8 @@ export default function SearchScreen() {
                   Título do Livro
                 </Text>
                 <TextInput
-                  className="h-12 px-3.5 rounded-xl border border-inputBorder bg-inputBg text-sm text-textPrimary"
+                  className="h-12 px-3.5 rounded-xl border border-inputBorder bg-inputBg text-sm text-textPrimary py-0"
+                  style={{ paddingVertical: 0, textAlignVertical: 'center' }}
                   placeholder="Ex: O Senhor dos Anéis"
                   placeholderTextColor={theme.textMuted}
                   value={customBookTitle}
@@ -737,7 +739,8 @@ export default function SearchScreen() {
                   Autor
                 </Text>
                 <TextInput
-                  className="h-12 px-3.5 rounded-xl border border-inputBorder bg-inputBg text-sm text-textPrimary"
+                  className="h-12 px-3.5 rounded-xl border border-inputBorder bg-inputBg text-sm text-textPrimary py-0"
+                  style={{ paddingVertical: 0, textAlignVertical: 'center' }}
                   placeholder="Ex: J.R.R. Tolkien"
                   placeholderTextColor={theme.textMuted}
                   value={customBookAuthor}
@@ -750,7 +753,8 @@ export default function SearchScreen() {
                   Número de Páginas
                 </Text>
                 <TextInput
-                  className="h-12 px-3.5 rounded-xl border border-inputBorder bg-inputBg text-sm text-textPrimary"
+                  className="h-12 px-3.5 rounded-xl border border-inputBorder bg-inputBg text-sm text-textPrimary py-0"
+                  style={{ paddingVertical: 0, textAlignVertical: 'center' }}
                   placeholder="Ex: 500"
                   placeholderTextColor={theme.textMuted}
                   keyboardType="numeric"

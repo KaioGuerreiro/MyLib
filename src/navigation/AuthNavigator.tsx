@@ -5,9 +5,9 @@ import RegisterScreen from '../screens/RegisterScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 
 export type AuthStackParamList = {
-  Login: { isDark?: boolean } | undefined;
-  Register: { isDark?: boolean } | undefined;
-  ForgotPassword: { isDark?: boolean } | undefined;
+  Login: undefined;
+  Register: undefined;
+  ForgotPassword: undefined;
 };
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
@@ -21,4 +21,3 @@ export function AuthNavigator() {
     </Stack.Navigator>
   );
 }
-

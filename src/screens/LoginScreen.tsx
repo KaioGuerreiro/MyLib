@@ -26,10 +26,9 @@ import { useTheme } from "../theme/ThemeContext";
 import { signInUser, getAuthErrorMessage } from "../services/authService";
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
-type LoginRouteProp = RouteProp<AuthStackParamList, 'Login'>;
 
-export default function LoginScreen({ navigation, route }: { navigation: NavigationProp; route?: LoginRouteProp }) {
-  const { isDark, theme, toggleTheme, toggleAnim, setIsDark } = useTheme();
+export default function LoginScreen({ navigation }: { navigation: NavigationProp }) {
+  const { isDark, theme, toggleTheme, toggleAnim } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -90,12 +89,6 @@ export default function LoginScreen({ navigation, route }: { navigation: Navigat
     setPasswordError("");
     return true;
   };
-
-  useEffect(() => {
-    if (route?.params?.isDark !== undefined && route.params.isDark !== isDark) {
-      setIsDark(route.params.isDark);
-    }
-  }, [isDark, route?.params?.isDark, setIsDark]);
 
   const handleLogin = async () => {
     if (loading) return;
@@ -179,12 +172,12 @@ export default function LoginScreen({ navigation, route }: { navigation: Navigat
               className="w-18 h-18 rounded-full items-center justify-center mb-3 shadow-lg elevation-6"
               style={{ backgroundColor: theme.primary }}
             >
-              <Ionicons name="book" size={32} color={theme.bg} />
+              <Ionicons name="book" size={32} color={theme.primaryText} />
             </View>
             <Text className="text-4xl font-extrabold tracking-wider" style={{ color: theme.text }}>
               MyLib
             </Text>
-            <Text className="text-xs mt-1 tracking-widest uppercase font-medium" style={{ color: theme.label }}>
+            <Text className="text-xs mt-1 tracking-widest uppercase font-semibold" style={{ color: theme.label }}>
               Sua jornada de leitura
             </Text>
           </View>
@@ -200,7 +193,7 @@ export default function LoginScreen({ navigation, route }: { navigation: Navigat
             <Text className="text-2xl font-bold mb-1" style={{ color: theme.text }}>
               Entrar
             </Text>
-            <Text className="text-sm mb-6" style={{ color: theme.textSecondary }}>
+            <Text className="text-sm mb-6 font-medium" style={{ color: theme.textSecondary }}>
               Bem-vindo, leitor!
             </Text>
 
@@ -284,7 +277,7 @@ export default function LoginScreen({ navigation, route }: { navigation: Navigat
             {/* Esqueceu a senha */}
             <TouchableOpacity
               className="self-end my-2 py-1"
-              onPress={() => navigation.navigate("ForgotPassword", { isDark })}
+              onPress={() => navigation.navigate("ForgotPassword")}
               activeOpacity={0.7}
               accessibilityLabel="Recuperar senha"
               id="btn-forgot-password"
@@ -308,13 +301,13 @@ export default function LoginScreen({ navigation, route }: { navigation: Navigat
                 id="btn-login"
               >
                 {loading ? (
-                  <ActivityIndicator color={theme.bg} size="small" />
+                  <ActivityIndicator color={theme.primaryText} size="small" />
                 ) : (
                   <View className="flex-row items-center">
-                    <Text className="text-base font-bold tracking-wide mr-2" style={{ color: theme.bg }}>
+                    <Text className="text-base font-bold tracking-wide mr-2" style={{ color: theme.primaryText }}>
                       Entrar
                     </Text>
-                    <Ionicons name="arrow-forward" size={18} color={theme.bg} />
+                    <Ionicons name="arrow-forward" size={18} color={theme.primaryText} />
                   </View>
                 )}
               </TouchableOpacity>
@@ -329,7 +322,7 @@ export default function LoginScreen({ navigation, route }: { navigation: Navigat
                 activeOpacity={0.7}
                 id="btn-signup"
                 accessibilityLabel="Criar conta"
-                onPress={() => navigation.navigate("Register", { isDark })}
+                onPress={() => navigation.navigate("Register")}
               >
                 <Text className="text-xs font-bold" style={{ color: theme.signUpLink }}>
                   Cadastre-se

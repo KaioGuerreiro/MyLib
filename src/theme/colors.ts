@@ -36,6 +36,7 @@ export interface ThemeType {
   textSub: string;
   label: string;
   primary: string;
+  primaryText: string;
   primaryShadow: string;
   forgotText: string;
   signUpText: string;
@@ -74,6 +75,7 @@ export const DARK: ThemeType = {
   textSub: PALETTE.textSecondary,
   label: PALETTE.accentText,
   primary: PALETTE.accent,
+  primaryText: "#FFFFFF",
   primaryShadow: PALETTE.accent,
   forgotText: PALETTE.accentText,
   signUpText: PALETTE.textSecondary,
@@ -112,6 +114,7 @@ export const LIGHT: ThemeType = {
   textSub: "#5B6077",
   label: "#6C5CE7",
   primary: PALETTE.accent,
+  primaryText: "#FFFFFF",
   primaryShadow: PALETTE.accent,
   forgotText: "#6C5CE7",
   signUpText: "#5B6077",

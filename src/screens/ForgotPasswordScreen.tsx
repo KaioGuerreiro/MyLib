@@ -26,16 +26,13 @@ import { useTheme } from "../theme/ThemeContext";
 import { sendPasswordReset, getAuthErrorMessage } from "../services/authService";
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList, "ForgotPassword">;
-type ForgotPasswordRouteProp = RouteProp<AuthStackParamList, "ForgotPassword">;
 
 export default function ForgotPasswordScreen({
   navigation,
-  route,
 }: {
   navigation: NavigationProp;
-  route?: ForgotPasswordRouteProp;
 }) {
-  const { isDark, theme, toggleTheme, toggleAnim, setIsDark } = useTheme();
+  const { isDark, theme, toggleTheme, toggleAnim } = useTheme();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [successSent, setSuccessSent] = useState(false);
@@ -48,12 +45,6 @@ export default function ForgotPasswordScreen({
   const shakeEmailAnim = useRef(new Animated.Value(0)).current;
 
   const insets = useSafeAreaInsets();
-
-  useEffect(() => {
-    if (route?.params?.isDark !== undefined && route.params.isDark !== isDark) {
-      setIsDark(route.params.isDark);
-    }
-  }, [isDark, route?.params?.isDark, setIsDark]);
 
   const shakeField = (anim: Animated.Value) => {
     anim.setValue(0);
@@ -159,12 +150,12 @@ export default function ForgotPasswordScreen({
               className="w-18 h-18 rounded-full items-center justify-center mb-3 shadow-lg elevation-6"
               style={{ backgroundColor: theme.primary }}
             >
-              <Ionicons name="key-outline" size={32} color={theme.bg} />
+              <Ionicons name="key-outline" size={32} color={theme.primaryText} />
             </View>
             <Text className="text-4xl font-extrabold tracking-wider" style={{ color: theme.text }}>
               MyLib
             </Text>
-            <Text className="text-xs mt-1 tracking-widest uppercase font-medium" style={{ color: theme.label }}>
+            <Text className="text-xs mt-1 tracking-widest uppercase font-semibold" style={{ color: theme.label }}>
               Recuperação de Acesso
             </Text>
           </View>
@@ -242,13 +233,13 @@ export default function ForgotPasswordScreen({
                     id="btn-send-reset-link"
                   >
                     {loading ? (
-                      <ActivityIndicator color={theme.bg} size="small" />
+                      <ActivityIndicator color={theme.primaryText} size="small" />
                     ) : (
                       <View className="flex-row items-center">
-                        <Text className="text-base font-bold tracking-wide mr-2" style={{ color: theme.bg }}>
+                        <Text className="text-base font-bold tracking-wide mr-2" style={{ color: theme.primaryText }}>
                           Enviar Link
                         </Text>
-                        <Ionicons name="paper-plane-outline" size={18} color={theme.bg} />
+                        <Ionicons name="paper-plane-outline" size={18} color={theme.primaryText} />
                       </View>
                     )}
                   </TouchableOpacity>
@@ -297,7 +288,7 @@ export default function ForgotPasswordScreen({
               </Text>
               <TouchableOpacity
                 activeOpacity={0.7}
-                onPress={() => navigation.navigate("Login", { isDark })}
+                onPress={() => navigation.navigate("Login")}
                 accessibilityLabel="Voltar para a tela de login"
                 id="btn-back-to-login"
               >

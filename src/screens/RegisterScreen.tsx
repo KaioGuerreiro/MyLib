@@ -27,16 +27,13 @@ import { useTheme } from "../theme/ThemeContext";
 import { signUpUser, getAuthErrorMessage } from "../services/authService";
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList, "Register">;
-type RegisterRouteProp = RouteProp<AuthStackParamList, "Register">;
 
 export default function RegisterScreen({
   navigation,
-  route,
 }: {
   navigation: NavigationProp;
-  route?: RegisterRouteProp;
 }) {
-  const { isDark, theme, toggleTheme, toggleAnim, setIsDark } = useTheme();
+  const { isDark, theme, toggleTheme, toggleAnim } = useTheme();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -68,12 +65,6 @@ export default function RegisterScreen({
   const confirmPasswordRef = useRef<TextInput>(null);
 
   const insets = useSafeAreaInsets();
-
-  useEffect(() => {
-    if (route?.params?.isDark !== undefined && route.params.isDark !== isDark) {
-      setIsDark(route.params.isDark);
-    }
-  }, [isDark, route?.params?.isDark, setIsDark]);
 
   const shakeField = (anim: Animated.Value) => {
     anim.setValue(0);
@@ -227,7 +218,7 @@ export default function RegisterScreen({
               className="w-18 h-18 rounded-full items-center justify-center mb-3 shadow-lg elevation-6"
               style={{ backgroundColor: theme.primary }}
             >
-              <Ionicons name="person-add" size={32} color={theme.bg} />
+              <Ionicons name="person-add" size={32} color={theme.primaryText} />
             </View>
             <Text className="text-4xl font-extrabold tracking-wider" style={{ color: theme.text }}>
               MyLib
@@ -453,13 +444,13 @@ export default function RegisterScreen({
                     id="btn-register-submit"
                   >
                     {loading ? (
-                      <ActivityIndicator color={theme.bg} size="small" />
+                      <ActivityIndicator color={theme.primaryText} size="small" />
                     ) : (
                       <View className="flex-row items-center">
-                        <Text className="text-base font-bold tracking-wide mr-2" style={{ color: theme.bg }}>
+                        <Text className="text-base font-bold tracking-wide mr-2" style={{ color: theme.primaryText }}>
                           Criar Conta
                         </Text>
-                        <Ionicons name="arrow-forward" size={18} color={theme.bg} />
+                        <Ionicons name="arrow-forward" size={18} color={theme.primaryText} />
                       </View>
                     )}
                   </TouchableOpacity>
@@ -472,7 +463,7 @@ export default function RegisterScreen({
                   </Text>
                   <TouchableOpacity
                     activeOpacity={0.7}
-                    onPress={() => navigation.navigate("Login", { isDark })}
+                    onPress={() => navigation.navigate("Login")}
                   >
                     <Text className="text-xs font-bold" style={{ color: theme.signUpLink }}>
                       Entrar
@@ -497,15 +488,15 @@ export default function RegisterScreen({
                 <TouchableOpacity
                   className="w-full h-13 rounded-2xl items-center justify-center flex-row shadow-lg elevation-4"
                   style={{ backgroundColor: theme.primary }}
-                  onPress={() => navigation.navigate("Login", { isDark })}
+                  onPress={() => navigation.navigate("Login")}
                   activeOpacity={0.85}
                   accessibilityLabel="Ir para a tela de login"
                   id="btn-go-to-login"
                 >
-                  <Text className="text-base font-bold tracking-wide mr-2" style={{ color: theme.bg }}>
+                  <Text className="text-base font-bold tracking-wide mr-2" style={{ color: theme.primaryText }}>
                     Ir para o Login
                   </Text>
-                  <Ionicons name="arrow-forward" size={18} color={theme.bg} />
+                  <Ionicons name="arrow-forward" size={18} color={theme.primaryText} />
                 </TouchableOpacity>
               </View>
             )}
