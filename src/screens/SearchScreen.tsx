@@ -21,7 +21,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../theme/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { ThemeType } from '../theme/colors';
 import { Livro } from '../models/Livro';
 import { searchBooks, searchBooksByCategory } from '../services/googleBooksService';
 import { addBookToBookshelf, subscribeToUserBookshelf, ItemEstanteCompleto } from '../services/bookshelfService';
@@ -55,7 +54,6 @@ export default function SearchScreen() {
   const { theme } = useTheme();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
-  const s = makeStyles(theme);
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Livro[]>([]);
@@ -77,7 +75,6 @@ export default function SearchScreen() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<TextInput>(null);
 
-  // Carrega buscas recentes do AsyncStorage
   useEffect(() => {
     loadRecentSearches();
   }, []);
@@ -86,7 +83,6 @@ export default function SearchScreen() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
   }, []);
 
-  // Escuta a estante do usuário para saber quais livros já foram adicionados
   useEffect(() => {
     if (!user?.uid) return;
 
@@ -138,7 +134,7 @@ export default function SearchScreen() {
       setLoading(true);
       setError(null);
       setHasSearched(true);
-      setSortBy('relevance'); // Reseta a ordenação para Relevância ao fazer nova busca
+      setSortBy('relevance');
 
       if (!isCategory) {
         saveRecentSearch(trimmed);
@@ -265,7 +261,6 @@ export default function SearchScreen() {
       await addBookToBookshelf(user.uid, customLivro, 'NA_FILA');
       Alert.alert('Livro Adicionado! 📚', `"${customLivro.titulo}" foi adicionado à sua estante.`);
 
-      // Limpar form
       setCustomBookTitle('');
       setCustomBookAuthor('');
       setCustomBookPages('');
@@ -276,7 +271,6 @@ export default function SearchScreen() {
     }
   };
 
-  // Ordenação dinâmica dos resultados
   const sortedResults = useMemo(() => {
     if (!results || results.length === 0) return [];
     const list = [...results];
@@ -292,7 +286,7 @@ export default function SearchScreen() {
         return list.sort((a, b) => a.autor.localeCompare(b.autor, 'pt-BR'));
       case 'relevance':
       default:
-        return list; // Ordem de relevância do algoritmo
+        return list;
     }
   }, [results, sortBy]);
 
@@ -303,37 +297,53 @@ export default function SearchScreen() {
     const isAdding = addingBookId === item.idGoogleBooks;
 
     return (
-      <View style={s.bookResultCard}>
-        {/* Capa do livro */}
-        <View style={s.bookResultCover}>
+      <View className="flex-row items-center p-3.5 rounded-2xl border border-cardBorder bg-card shadow-sm elevation-2">
+        {/* Capa do Livro */}
+        <View className="w-[58px] h-[84px] rounded-xl overflow-hidden mr-3.5 items-center justify-center border border-cardBorder bg-surface">
           {item.urlCapa ? (
-            <Image source={{ uri: item.urlCapa }} style={s.bookResultImage} resizeMode="cover" />
+            <Image
+              source={{ uri: item.urlCapa }}
+              className="w-full h-full"
+              resizeMode="cover"
+            />
           ) : (
-            <View style={s.bookResultCoverPlaceholder}>
-              <Ionicons name="book-outline" size={28} color={theme.accentText} />
+            <View className="w-full h-full items-center justify-center bg-accent/15">
+              <Ionicons name="book-outline" size={24} color={theme.accentText} />
             </View>
           )}
         </View>
 
-        {/* Info do livro */}
-        <View style={s.bookResultInfo}>
-          <Text style={s.bookResultTitle} numberOfLines={2}>
+        {/* Informações do Livro */}
+        <View className="flex-1 justify-center mr-2">
+          <Text className="text-[15px] font-bold leading-5 mb-1 text-textPrimary" numberOfLines={2}>
             {item.titulo}
           </Text>
-          <Text style={s.bookResultAuthor} numberOfLines={1}>
+          <Text className="text-xs font-medium mb-1.5 text-textSecondary" numberOfLines={1}>
             {item.autor}
           </Text>
+
           {item.totalPaginas > 0 && (
-            <Text style={s.bookResultPages}>{item.totalPaginas} páginas</Text>
+            <View className="flex-row items-center">
+              <Ionicons
+                name="document-text-outline"
+                size={12}
+                color={theme.textMuted}
+                className="mr-1"
+              />
+              <Text className="text-[11px] font-medium text-textMuted">
+                {item.totalPaginas} páginas
+              </Text>
+            </View>
           )}
         </View>
 
-        {/* Botão de adicionar */}
+        {/* Botão de Adicionar / Já na Estante */}
         <TouchableOpacity
-          style={[
-            s.addButton,
-            isInShelf && s.addButtonDisabled,
-          ]}
+          className={`w-10 h-10 rounded-full items-center justify-center ${
+            isInShelf
+              ? 'bg-success/20 border border-success'
+              : 'bg-accent shadow-md shadow-accent/30 elevation-3'
+          }`}
           onPress={() => handleAddToBookshelf(item)}
           disabled={isInShelf || isAdding}
           activeOpacity={0.8}
@@ -341,9 +351,9 @@ export default function SearchScreen() {
           {isAdding ? (
             <ActivityIndicator size="small" color={theme.bg} />
           ) : isInShelf ? (
-            <Ionicons name="checkmark" size={18} color={theme.success} />
+            <Ionicons name="checkmark" size={20} color={theme.success} />
           ) : (
-            <Ionicons name="add" size={20} color={theme.bg} />
+            <Ionicons name="add" size={22} color={theme.bg} />
           )}
         </TouchableOpacity>
       </View>
@@ -353,20 +363,22 @@ export default function SearchScreen() {
   const showInitialState = !hasSearched && !loading;
 
   return (
-    <View style={[s.container, { paddingTop: insets.top, paddingHorizontal: 20 }]}>
+    <View className="flex-1 bg-bg px-5" style={{ paddingTop: insets.top }}>
       {/* Header */}
-      <View style={s.header}>
-        <Text style={s.headerTitle}>Buscar Livros</Text>
+      <View className="flex-row justify-between items-center mb-4 pt-2">
+        <Text className="text-2xl font-extrabold tracking-tight text-textPrimary">
+          Buscar Livros
+        </Text>
         <Ionicons name="search" size={22} color={theme.accent} />
       </View>
 
       {/* Barra de busca */}
-      <View style={s.searchBarContainer}>
-        <View style={s.searchBar}>
-          <Ionicons name="search-outline" size={18} color={theme.textMuted} style={s.searchIcon} />
+      <View className="mb-4">
+        <View className="flex-row items-center rounded-2xl border border-inputBorder bg-inputBg px-4 h-14 shadow-sm elevation-1">
+          <Ionicons name="search-outline" size={20} color={theme.textMuted} className="mr-3" />
           <TextInput
             ref={inputRef}
-            style={s.searchInput}
+            className="flex-1 text-[15px] font-medium h-full text-textPrimary py-2"
             placeholder="Buscar por título, autor ou ISBN..."
             placeholderTextColor={theme.textMuted}
             value={query}
@@ -377,8 +389,8 @@ export default function SearchScreen() {
             autoCapitalize="none"
           />
           {query.length > 0 && (
-            <TouchableOpacity onPress={handleClearQuery} activeOpacity={0.7} style={s.clearButton}>
-              <Ionicons name="close-circle" size={18} color={theme.textMuted} />
+            <TouchableOpacity onPress={handleClearQuery} activeOpacity={0.7} className="p-1.5 ml-1">
+              <Ionicons name="close-circle" size={20} color={theme.textMuted} />
             </TouchableOpacity>
           )}
         </View>
@@ -386,17 +398,18 @@ export default function SearchScreen() {
 
       {/* Barra rápida de categorias no topo se estiver nos resultados */}
       {hasSearched && (
-        <View style={s.categoryChipsContainer}>
+        <View className="mb-2.5">
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={s.categoryChipsScroll}
+            contentContainerStyle={{ gap: 8, paddingRight: 16 }}
           >
             <TouchableOpacity
-              style={[
-                s.filterChip,
-                !activeCategory && s.filterChipActive,
-              ]}
+              className={`flex-row items-center rounded-full border px-4 py-2 overflow-hidden ${
+                !activeCategory
+                  ? 'border-0 px-[17px] py-[9px]'
+                  : 'bg-card border-cardBorder'
+              }`}
               onPress={handleClearQuery}
               activeOpacity={0.7}
             >
@@ -409,10 +422,9 @@ export default function SearchScreen() {
                 />
               ) : null}
               <Text
-                style={[
-                  s.filterChipText,
-                  !activeCategory && s.filterChipTextActive,
-                ]}
+                className={`text-xs font-semibold ${
+                  !activeCategory ? 'text-bg' : 'text-textSecondary'
+                }`}
               >
                 Todas
               </Text>
@@ -422,10 +434,11 @@ export default function SearchScreen() {
               return (
                 <TouchableOpacity
                   key={cat.query}
-                  style={[
-                    s.filterChip,
-                    isSelected && s.filterChipActive,
-                  ]}
+                  className={`flex-row items-center rounded-full border px-4 py-2 overflow-hidden ${
+                    isSelected
+                      ? 'border-0 px-[17px] py-[9px]'
+                      : 'bg-card border-cardBorder'
+                  }`}
                   onPress={() => handleCategoryPress(cat)}
                   activeOpacity={0.7}
                 >
@@ -441,14 +454,12 @@ export default function SearchScreen() {
                     name={cat.icon}
                     size={14}
                     color={isSelected ? theme.bg : theme.accent}
-                    style={{ marginRight: 5, zIndex: 2 }}
+                    className="mr-1.5 z-10"
                   />
                   <Text
-                    style={[
-                      s.filterChipText,
-                      isSelected && s.filterChipTextActive,
-                      { zIndex: 2 }
-                    ]}
+                    className={`text-xs font-semibold z-10 ${
+                      isSelected ? 'text-bg' : 'text-textSecondary'
+                    }`}
                   >
                     {cat.label}
                   </Text>
@@ -460,33 +471,39 @@ export default function SearchScreen() {
       )}
 
       {showInitialState ? (
-        /* Estado inicial: Buscas Recentes + Categorias */
+        /* Estado inicial */
         <FlatList
           data={[]}
           renderItem={null}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={[s.initialContent, { paddingBottom: insets.bottom + 100 }]}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
           ListHeaderComponent={
             <>
               {/* Buscas Recentes */}
               {recentSearches.length > 0 && (
-                <View style={s.section}>
-                  <View style={s.sectionHeader}>
-                    <Text style={s.sectionTitle}>Buscas Recentes</Text>
+                <View className="mb-6">
+                  <View className="flex-row justify-between items-center mb-3">
+                    <Text className="text-sm font-bold text-textPrimary">
+                      Buscas Recentes
+                    </Text>
                     <TouchableOpacity onPress={clearRecentSearches} activeOpacity={0.7}>
-                      <Text style={s.clearAllText}>Limpar</Text>
+                      <Text className="text-xs font-semibold text-accentText">
+                        Limpar
+                      </Text>
                     </TouchableOpacity>
                   </View>
-                  <View style={s.recentChipsRow}>
+                  <View className="flex-row flex-wrap gap-2">
                     {recentSearches.map((term, index) => (
                       <TouchableOpacity
                         key={`${term}-${index}`}
-                        style={s.recentChip}
+                        className="flex-row items-center px-3 py-2 rounded-xl border border-cardBorder bg-card gap-1.5"
                         onPress={() => handleRecentSearch(term)}
                         activeOpacity={0.7}
                       >
                         <Ionicons name="time-outline" size={14} color={theme.textSecondary} />
-                        <Text style={s.recentChipText} numberOfLines={1}>{term}</Text>
+                        <Text className="text-xs font-medium text-textPrimary" numberOfLines={1}>
+                          {term}
+                        </Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -494,42 +511,43 @@ export default function SearchScreen() {
               )}
 
               {/* Categorias */}
-              <View style={s.section}>
-                <Text style={s.sectionTitle}>Explorar Categorias</Text>
-                <View style={s.categoriesGrid}>
+              <View className="mb-6">
+                <Text className="text-sm font-bold mb-3 text-textPrimary">
+                  Explorar Categorias
+                </Text>
+                <View className="flex-row flex-wrap gap-3">
                   {CATEGORIES.map((cat) => (
                     <TouchableOpacity
                       key={cat.query}
-                      style={[
-                        s.categoryCard,
-                        activeCategory === cat.query && s.categoryCardActive,
-                      ]}
+                      className={`w-[48%] flex-row items-center p-3 rounded-2xl border shadow-xs ${
+                        activeCategory === cat.query
+                          ? 'bg-accent/20 border-accent'
+                          : 'bg-card border-cardBorder'
+                      }`}
                       onPress={() => handleCategoryPress(cat)}
                       activeOpacity={0.8}
                     >
-                      <View style={[
-                        s.categoryIconCircle,
-                        activeCategory === cat.query && s.categoryIconCircleActive,
-                      ]}>
+                      <View className="w-10 h-10 rounded-xl items-center justify-center mr-2.5 overflow-hidden bg-accent/20">
                         {activeCategory === cat.query ? (
                           <LinearGradient
                             colors={[theme.accent, theme.primary]}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
-                            style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                            style={[StyleSheet.absoluteFill, { borderRadius: 12 }]}
                           />
                         ) : null}
                         <Ionicons
                           name={cat.icon}
                           size={20}
                           color={activeCategory === cat.query ? theme.bg : theme.accent}
-                          style={{ zIndex: 2 }}
+                          className="z-10"
                         />
                       </View>
-                      <Text style={[
-                        s.categoryLabel,
-                        activeCategory === cat.query && s.categoryLabelActive,
-                      ]}>
+                      <Text
+                        className={`text-xs font-bold ${
+                          activeCategory === cat.query ? 'text-accentText' : 'text-textPrimary'
+                        }`}
+                      >
                         {cat.label}
                       </Text>
                     </TouchableOpacity>
@@ -542,11 +560,10 @@ export default function SearchScreen() {
       ) : (
         /* Resultados da busca */
         <>
-          {/* Header de resultados e Barra de Ordenação */}
           {!loading && hasSearched && results.length > 0 && (
-            <View style={s.resultsMetaSection}>
-              <View style={s.resultsHeader}>
-                <Text style={s.resultsCount}>
+            <View className="mb-3">
+              <View className="mb-2">
+                <Text className="text-xs font-semibold text-textSecondary">
                   {activeCategoryObject
                     ? `Categoria: ${activeCategoryObject.label} (${results.length} livros)`
                     : `${results.length} livro${results.length !== 1 ? 's' : ''} encontrado${results.length !== 1 ? 's' : ''}`}
@@ -557,15 +574,21 @@ export default function SearchScreen() {
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={s.sortChipsScroll}
+                contentContainerStyle={{ gap: 6, alignItems: 'center' }}
               >
-                <Text style={s.sortLabel}>Ordenar:</Text>
+                <Text className="text-xs font-bold mr-1 text-textSecondary">
+                  Ordenar:
+                </Text>
                 {SORT_OPTIONS.map((opt) => {
                   const isSelected = sortBy === opt.key;
                   return (
                     <TouchableOpacity
                       key={opt.key}
-                      style={[s.sortChip, isSelected && s.sortChipActive]}
+                      className={`flex-row items-center px-3 py-1.5 rounded-full border ${
+                        isSelected
+                          ? 'bg-accent/20 border-accent'
+                          : 'bg-card border-cardBorder'
+                      }`}
                       onPress={() => setSortBy(opt.key)}
                       activeOpacity={0.7}
                     >
@@ -573,9 +596,13 @@ export default function SearchScreen() {
                         name={opt.icon}
                         size={13}
                         color={isSelected ? theme.accentText : theme.textMuted}
-                        style={{ marginRight: 4 }}
+                        className="mr-1"
                       />
-                      <Text style={[s.sortChipText, isSelected && s.sortChipTextActive]}>
+                      <Text
+                        className={`text-xs font-semibold ${
+                          isSelected ? 'text-accentText' : 'text-textMuted'
+                        }`}
+                      >
                         {opt.label}
                       </Text>
                     </TouchableOpacity>
@@ -586,42 +613,54 @@ export default function SearchScreen() {
           )}
 
           {loading ? (
-            <View style={s.loadingContainer}>
+            <View className="flex-1 items-center justify-center py-12">
               <ActivityIndicator size="large" color={theme.accent} />
-              <Text style={s.loadingText}>Buscando livros mais relevantes...</Text>
+              <Text className="text-xs font-medium mt-3 text-textSecondary">
+                Buscando livros mais relevantes...
+              </Text>
             </View>
           ) : error ? (
-            <View style={s.emptyState}>
-              <View style={s.emptyIconCircle}>
+            <View className="flex-1 items-center justify-center py-16 px-6">
+              <View className="w-16 h-16 rounded-full items-center justify-center mb-3 bg-danger/20">
                 <Ionicons name="cloud-offline-outline" size={32} color={theme.danger} />
               </View>
-              <Text style={s.emptyTitle}>Erro na busca</Text>
-              <Text style={s.emptySubtitle}>{error}</Text>
+              <Text className="text-base font-bold text-center mb-1 text-textPrimary">
+                Erro na busca
+              </Text>
+              <Text className="text-xs text-center mb-4 leading-5 text-textSecondary">
+                {error}
+              </Text>
               <TouchableOpacity
-                style={s.retryButton}
+                className="flex-row items-center px-4 py-2.5 rounded-xl bg-primary"
                 onPress={() => query.trim() ? performSearch(query) : activeCategory && performSearch(activeCategory, true)}
                 activeOpacity={0.85}
               >
-                <Ionicons name="refresh" size={16} color={theme.bg} style={{ marginRight: 6 }} />
-                <Text style={s.retryButtonText}>Tentar Novamente</Text>
+                <Ionicons name="refresh" size={16} color={theme.bg} className="mr-1.5" />
+                <Text className="text-xs font-bold text-bg">
+                  Tentar Novamente
+                </Text>
               </TouchableOpacity>
             </View>
           ) : results.length === 0 && hasSearched ? (
-            <View style={s.emptyState}>
-              <View style={s.emptyIconCircle}>
+            <View className="flex-1 items-center justify-center py-16 px-6">
+              <View className="w-16 h-16 rounded-full items-center justify-center mb-3 bg-surface">
                 <Ionicons name="search-outline" size={32} color={theme.textMuted} />
               </View>
-              <Text style={s.emptyTitle}>Nenhum livro encontrado</Text>
-              <Text style={s.emptySubtitle}>
+              <Text className="text-base font-bold text-center mb-1 text-textPrimary">
+                Nenhum livro encontrado
+              </Text>
+              <Text className="text-xs text-center mb-5 leading-5 text-textSecondary">
                 Tente buscar com outros termos ou explore as categorias.
               </Text>
               <TouchableOpacity
-                style={s.customBookButton}
+                className="flex-row items-center px-5 py-3 rounded-2xl shadow-md bg-primary"
                 onPress={() => setIsCustomBookModalVisible(true)}
                 activeOpacity={0.8}
               >
-                <Ionicons name="add-circle-outline" size={20} color={theme.bg} style={{ marginRight: 6 }} />
-                <Text style={s.customBookButtonText}>Criar Livro Manualmente</Text>
+                <Ionicons name="add-circle-outline" size={20} color={theme.bg} className="mr-1.5" />
+                <Text className="text-xs font-bold text-bg">
+                  Criar Livro Manualmente
+                </Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -630,22 +669,23 @@ export default function SearchScreen() {
               keyExtractor={(item) => item.idGoogleBooks}
               renderItem={renderBookItem}
               showsVerticalScrollIndicator={false}
-              ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
-              contentContainerStyle={[
-                s.resultsList,
-                { paddingBottom: insets.bottom + 100 },
-              ]}
+              ItemSeparatorComponent={() => <View className="h-3" />}
+              contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
               ListFooterComponent={
                 sortedResults.length > 0 ? (
-                  <View style={s.listFooter}>
-                    <Text style={s.listFooterText}>Não encontrou o seu livro?</Text>
+                  <View className="items-center py-6">
+                    <Text className="text-xs font-medium mb-3 text-textSecondary">
+                      Não encontrou o seu livro?
+                    </Text>
                     <TouchableOpacity
-                      style={s.customBookButtonOutline}
+                      className="flex-row items-center px-4 py-2.5 rounded-xl border border-accent bg-accent/15"
                       onPress={() => setIsCustomBookModalVisible(true)}
                       activeOpacity={0.8}
                     >
-                      <Ionicons name="add" size={18} color={theme.accent} style={{ marginRight: 4 }} />
-                      <Text style={s.customBookButtonOutlineText}>Adicionar Manualmente</Text>
+                      <Ionicons name="add" size={18} color={theme.accent} className="mr-1" />
+                      <Text className="text-xs font-bold text-accentText">
+                        Adicionar Manualmente
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 ) : null
@@ -663,54 +703,70 @@ export default function SearchScreen() {
         onRequestClose={() => setIsCustomBookModalVisible(false)}
       >
         <KeyboardAwareScrollView
-          contentContainerStyle={s.modalOverlay}
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.7)', padding: 20 }}
           enableOnAndroid={true}
           extraScrollHeight={Platform.OS === 'ios' ? 40 : 100}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={s.modalContent}>
-            <View style={s.modalHeader}>
-              <Text style={s.modalTitle}>Adicionar Livro</Text>
+          <View className="rounded-3xl p-6 border border-cardBorder bg-card shadow-2xl">
+            <View className="flex-row justify-between items-center mb-5">
+              <Text className="text-lg font-bold text-textPrimary">
+                Adicionar Livro
+              </Text>
               <TouchableOpacity onPress={() => setIsCustomBookModalVisible(false)}>
                 <Ionicons name="close" size={24} color={theme.text} />
               </TouchableOpacity>
             </View>
 
-            <View style={s.modalBody}>
-              <Text style={s.inputLabel}>Título do Livro</Text>
-              <TextInput
-                style={s.modalInput}
-                placeholder="Ex: O Senhor dos Anéis"
-                placeholderTextColor={theme.textMuted}
-                value={customBookTitle}
-                onChangeText={setCustomBookTitle}
-              />
+            <View className="gap-4">
+              <View>
+                <Text className="text-xs font-semibold uppercase tracking-wider mb-1.5 text-label">
+                  Título do Livro
+                </Text>
+                <TextInput
+                  className="h-12 px-3.5 rounded-xl border border-inputBorder bg-inputBg text-sm text-textPrimary"
+                  placeholder="Ex: O Senhor dos Anéis"
+                  placeholderTextColor={theme.textMuted}
+                  value={customBookTitle}
+                  onChangeText={setCustomBookTitle}
+                />
+              </View>
 
-              <Text style={s.inputLabel}>Autor</Text>
-              <TextInput
-                style={s.modalInput}
-                placeholder="Ex: J.R.R. Tolkien"
-                placeholderTextColor={theme.textMuted}
-                value={customBookAuthor}
-                onChangeText={setCustomBookAuthor}
-              />
+              <View>
+                <Text className="text-xs font-semibold uppercase tracking-wider mb-1.5 text-label">
+                  Autor
+                </Text>
+                <TextInput
+                  className="h-12 px-3.5 rounded-xl border border-inputBorder bg-inputBg text-sm text-textPrimary"
+                  placeholder="Ex: J.R.R. Tolkien"
+                  placeholderTextColor={theme.textMuted}
+                  value={customBookAuthor}
+                  onChangeText={setCustomBookAuthor}
+                />
+              </View>
 
-              <Text style={s.inputLabel}>Número de Páginas</Text>
-              <TextInput
-                style={s.modalInput}
-                placeholder="Ex: 500"
-                placeholderTextColor={theme.textMuted}
-                keyboardType="numeric"
-                value={customBookPages}
-                onChangeText={setCustomBookPages}
-              />
+              <View>
+                <Text className="text-xs font-semibold uppercase tracking-wider mb-1.5 text-label">
+                  Número de Páginas
+                </Text>
+                <TextInput
+                  className="h-12 px-3.5 rounded-xl border border-inputBorder bg-inputBg text-sm text-textPrimary"
+                  placeholder="Ex: 500"
+                  placeholderTextColor={theme.textMuted}
+                  keyboardType="numeric"
+                  value={customBookPages}
+                  onChangeText={setCustomBookPages}
+                />
+              </View>
 
               <TouchableOpacity
-                style={s.modalSubmitButton}
+                className="h-12 rounded-xl items-center justify-center mt-2 shadow-md bg-primary"
                 onPress={handleAddCustomBook}
                 activeOpacity={0.8}
               >
-                <Text style={s.modalSubmitButtonText}>Salvar Livro</Text>
+                <Text className="text-xs font-bold text-bg">
+                  Salvar Livro
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -718,468 +774,4 @@ export default function SearchScreen() {
       </Modal>
     </View>
   );
-}
-
-function makeStyles(t: ThemeType) {
-  return StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: t.bg,
-    },
-
-    /* Header */
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 16,
-    },
-    headerTitle: {
-      color: t.text,
-      fontSize: 26,
-      fontWeight: '800',
-      letterSpacing: -0.3,
-    },
-
-    /* Search Bar */
-    searchBarContainer: {
-      marginBottom: 12,
-    },
-    searchBar: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: t.inputBg,
-      borderRadius: 999, // Pílula
-      borderWidth: 1,
-      borderColor: t.inputBorder,
-      paddingHorizontal: 16,
-      height: 52,
-    },
-    searchIcon: {
-      marginRight: 10,
-    },
-    searchInput: {
-      flex: 1,
-      color: t.text,
-      fontSize: 15,
-      fontWeight: '500',
-    },
-    clearButton: {
-      marginLeft: 8,
-      padding: 4,
-    },
-
-    /* Category horizontal chips in results mode */
-    categoryChipsContainer: {
-      marginBottom: 10,
-    },
-    categoryChipsScroll: {
-      gap: 8,
-      paddingRight: 16,
-    },
-    filterChip: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: t.card,
-      borderRadius: 20,
-      borderWidth: 1,
-      borderColor: t.cardBorder,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      overflow: 'hidden',
-    },
-    filterChipActive: {
-      borderWidth: 0,
-      paddingHorizontal: 17,
-      paddingVertical: 9,
-    },
-    filterChipText: {
-      color: t.textSecondary,
-      fontSize: 14,
-      fontWeight: '600',
-    },
-    filterChipTextActive: {
-      color: t.bg,
-      fontWeight: '800',
-    },
-
-    /* Sections */
-    initialContent: {
-      paddingBottom: 20,
-    },
-    section: {
-      marginBottom: 24,
-    },
-    sectionHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 12,
-    },
-    sectionTitle: {
-      color: t.text,
-      fontSize: 18,
-      fontWeight: '700',
-    },
-    clearAllText: {
-      color: t.accent,
-      fontSize: 13,
-      fontWeight: '600',
-    },
-
-    /* Recent Searches */
-    recentChipsRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
-    },
-    recentChip: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: t.card,
-      borderRadius: 20,
-      borderWidth: 1,
-      borderColor: t.cardBorder,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      gap: 6,
-    },
-    recentChipText: {
-      color: t.textSecondary,
-      fontSize: 13,
-      fontWeight: '500',
-      maxWidth: 120,
-    },
-
-    /* Categories */
-    categoriesGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 10,
-      marginTop: 12,
-    },
-    categoryCard: {
-      width: '22.5%',
-      alignItems: 'center',
-      paddingVertical: 14,
-      borderRadius: 14,
-      backgroundColor: t.card,
-      borderWidth: 1,
-      borderColor: t.cardBorder,
-    },
-    categoryCardActive: {
-      backgroundColor: t.accent,
-      borderColor: t.accent,
-    },
-    categoryIconCircle: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: t.accent + '20',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 8,
-    },
-    categoryIconCircleActive: {
-      backgroundColor: 'rgba(255,255,255,0.25)',
-    },
-    categoryLabel: {
-      color: t.textSecondary,
-      fontSize: 11,
-      fontWeight: '600',
-      textAlign: 'center',
-    },
-    categoryLabelActive: {
-      color: t.bg,
-      fontWeight: '700',
-    },
-
-    /* Results Meta & Sort */
-    resultsMetaSection: {
-      marginBottom: 10,
-      gap: 8,
-    },
-    resultsHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    resultsCount: {
-      color: t.textSecondary,
-      fontSize: 13,
-      fontWeight: '600',
-    },
-    sortChipsScroll: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      paddingVertical: 2,
-    },
-    sortLabel: {
-      color: t.textMuted,
-      fontSize: 12,
-      fontWeight: '700',
-      marginRight: 4,
-    },
-    sortChip: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: t.card,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: t.cardBorder,
-      paddingHorizontal: 10,
-      paddingVertical: 5,
-    },
-    sortChipActive: {
-      backgroundColor: t.accent + '20',
-      borderColor: t.accent,
-    },
-    sortChipText: {
-      color: t.textMuted,
-      fontSize: 12,
-      fontWeight: '600',
-    },
-    sortChipTextActive: {
-      color: t.accentText,
-      fontWeight: '700',
-    },
-
-    /* Results List */
-    resultsList: {
-      paddingHorizontal: 16,
-    },
-
-    /* Book Result Card */
-    bookResultCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: t.card,
-      borderRadius: 16,
-      padding: 12,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.05,
-      shadowRadius: 10,
-      elevation: 2,
-    },
-    bookResultCover: {
-      width: 56,
-      height: 80,
-      borderRadius: 8,
-      overflow: 'hidden',
-      marginRight: 12,
-    },
-    bookResultImage: {
-      width: '100%',
-      height: '100%',
-    },
-    bookResultCoverPlaceholder: {
-      width: '100%',
-      height: '100%',
-      backgroundColor: t.accent + '20',
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: t.accent + '30',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    bookResultInfo: {
-      flex: 1,
-      marginRight: 10,
-    },
-    bookResultTitle: {
-      color: t.text,
-      fontSize: 15,
-      fontWeight: '700',
-      lineHeight: 20,
-      marginBottom: 3,
-    },
-    bookResultAuthor: {
-      color: t.textSecondary,
-      fontSize: 13,
-      fontWeight: '500',
-      marginBottom: 4,
-    },
-    bookResultPages: {
-      color: t.textMuted,
-      fontSize: 11,
-      fontWeight: '600',
-    },
-
-    /* Add Button */
-    addButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: t.accent,
-      alignItems: 'center',
-      justifyContent: 'center',
-      shadowColor: t.accent,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.3,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    addButtonDisabled: {
-      backgroundColor: t.success + '25',
-      shadowOpacity: 0,
-      elevation: 0,
-    },
-
-    /* Empty State */
-    emptyState: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 32,
-      paddingTop: 60,
-    },
-    emptyIconCircle: {
-      width: 72,
-      height: 72,
-      borderRadius: 36,
-      backgroundColor: t.accent + '15',
-      borderWidth: 1,
-      borderColor: t.accent + '30',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 16,
-    },
-    emptyTitle: {
-      color: t.text,
-      fontSize: 18,
-      fontWeight: '700',
-      marginBottom: 8,
-      textAlign: 'center',
-    },
-    emptySubtitle: {
-      color: t.textSecondary,
-      fontSize: 14,
-      textAlign: 'center',
-      lineHeight: 20,
-    },
-    retryButton: {
-      marginTop: 20,
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: t.accent,
-      paddingHorizontal: 20,
-      paddingVertical: 10,
-      borderRadius: 20,
-    },
-    retryButtonText: {
-      color: t.bg,
-      fontSize: 14,
-      fontWeight: '700',
-    },
-    loadingContainer: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingTop: 80,
-      gap: 12,
-    },
-    loadingText: {
-      color: t.textSecondary,
-      fontSize: 14,
-      fontWeight: '500',
-    },
-
-    /* Custom Book Buttons & Footer */
-    customBookButton: {
-      marginTop: 24,
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: t.accent,
-      paddingHorizontal: 20,
-      paddingVertical: 12,
-      borderRadius: 24,
-    },
-    customBookButtonText: {
-      color: t.bg,
-      fontSize: 15,
-      fontWeight: '700',
-    },
-    listFooter: {
-      alignItems: 'center',
-      paddingVertical: 30,
-      gap: 12,
-    },
-    listFooterText: {
-      color: t.textMuted,
-      fontSize: 14,
-    },
-    customBookButtonOutline: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: 'transparent',
-      borderWidth: 1,
-      borderColor: t.accent,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      borderRadius: 20,
-    },
-    customBookButtonOutlineText: {
-      color: t.accent,
-      fontSize: 14,
-      fontWeight: '600',
-    },
-
-    /* Custom Book Modal */
-    modalOverlay: {
-      flexGrow: 1,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      justifyContent: 'flex-end',
-    },
-    modalContent: {
-      backgroundColor: t.bg,
-      borderTopLeftRadius: 24,
-      borderTopRightRadius: 24,
-      padding: 24,
-      paddingBottom: 40,
-    },
-    modalHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 24,
-    },
-    modalTitle: {
-      color: t.text,
-      fontSize: 20,
-      fontWeight: '700',
-    },
-    modalBody: {
-      gap: 16,
-    },
-    inputLabel: {
-      color: t.textSecondary,
-      fontSize: 14,
-      fontWeight: '600',
-      marginBottom: 4,
-    },
-    modalInput: {
-      backgroundColor: t.inputBg,
-      borderWidth: 1,
-      borderColor: t.inputBorder,
-      borderRadius: 12,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      color: t.text,
-      fontSize: 15,
-    },
-    modalSubmitButton: {
-      backgroundColor: t.accent,
-      borderRadius: 14,
-      paddingVertical: 16,
-      alignItems: 'center',
-      marginTop: 10,
-    },
-    modalSubmitButtonText: {
-      color: t.bg,
-      fontSize: 16,
-      fontWeight: '700',
-    },
-  });
 }

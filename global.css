@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bg: 22 24 38;
+    --color-surface: 35 37 50;
+    --color-card: 35 37 50;
+    --color-card-border: 46 50 68;
+    --color-accent: 145 132 217;
+    --color-accent-text: 210 206 253;
+    --color-primary: 145 132 217;
+    --color-text-primary: 233 233 237;
+    --color-text-secondary: 178 182 202;
+    --color-text-muted: 117 121 140;
+    --color-label: 178 182 202;
+    --color-success: 127 196 160;
+    --color-warning: 224 165 78;
+    --color-danger: 224 115 107;
+    --color-streak: 224 138 90;
+    --color-input-bg: 28 30 45;
+    --color-input-border: 46 50 68;
+  }
+
+  .dark {
+    --color-bg: 22 24 38;
+    --color-surface: 35 37 50;
+    --color-card: 35 37 50;
+    --color-card-border: 46 50 68;
+    --color-accent: 145 132 217;
+    --color-accent-text: 210 206 253;
+    --color-primary: 145 132 217;
+    --color-text-primary: 233 233 237;
+    --color-text-secondary: 178 182 202;
+    --color-text-muted: 117 121 140;
+    --color-label: 178 182 202;
+    --color-success: 127 196 160;
+    --color-warning: 224 165 78;
+    --color-danger: 224 115 107;
+    --color-streak: 224 138 90;
+    --color-input-bg: 28 30 45;
+    --color-input-border: 46 50 68;
+  }
+
+  .light {
+    --color-bg: 245 246 250;
+    --color-surface: 255 255 255;
+    --color-card: 255 255 255;
+    --color-card-border: 226 229 238;
+    --color-accent: 145 132 217;
+    --color-accent-text: 108 92 231;
+    --color-primary: 145 132 217;
+    --color-text-primary: 22 24 38;
+    --color-text-secondary: 91 96 119;
+    --color-text-muted: 117 121 140;
+    --color-label: 108 92 231;
+    --color-success: 127 196 160;
+    --color-warning: 224 165 78;
+    --color-danger: 224 115 107;
+    --color-streak: 224 138 90;
+    --color-input-bg: 237 239 245;
+    --color-input-border: 213 217 229;
+  }
+}

@@ -15,7 +15,7 @@ interface InputFieldProps {
   onFocus: () => void;
   onBlur: () => void;
   theme: ThemeType;
-  s: any; // We pass the dynamic styles here
+  s?: any; // Suporte a estilos legados caso passados
   inputProps: React.ComponentProps<typeof TextInput>;
 }
 
@@ -37,12 +37,6 @@ export function InputField({
   const localRef = useRef<TextInput>(null);
   const ref = inputRef || localRef;
 
-  const borderStyle = hasError
-    ? s.inputContainerError
-    : isFocused
-    ? s.inputContainerFocused
-    : null;
-
   const iconColor = hasError
     ? theme.danger
     : isFocused
@@ -50,16 +44,37 @@ export function InputField({
     : theme.iconColor;
 
   return (
-    <View style={s.fieldWrapper}>
-      <Text style={s.label}>{label}</Text>
+    <View className="mb-4">
+      <Text
+        className="text-xs font-semibold uppercase tracking-wider mb-2"
+        style={{ color: theme.label }}
+      >
+        {label}
+      </Text>
       <Pressable
-        style={[s.inputContainer, borderStyle]}
+        className={`flex-row items-center h-13 px-4 rounded-xl border ${
+          hasError
+            ? 'border-danger bg-danger/10'
+            : isFocused
+            ? 'border-accent bg-surface'
+            : 'border-inputBorder bg-inputBg'
+        }`}
+        style={{
+          backgroundColor: isFocused ? theme.inputBgFocus : theme.inputBg,
+          borderColor: hasError
+            ? theme.danger
+            : isFocused
+            ? theme.inputBorderFocus
+            : theme.inputBorder,
+        }}
         onPress={() => ref.current?.focus()}
       >
-        <Ionicons name={icon} size={18} color={iconColor} style={s.inputIcon} />
+        <Ionicons name={icon} size={18} color={iconColor} className="mr-3" />
         <TextInput
           ref={ref}
-          style={s.input}
+          className="flex-1 text-base h-full"
+          style={{ color: theme.text }}
+          placeholderTextColor={theme.textMuted}
           onFocus={onFocus}
           onBlur={onBlur}
           {...inputProps}
@@ -68,18 +83,23 @@ export function InputField({
           <Pressable
             onPress={onRightIconPress}
             hitSlop={8}
-            style={{ paddingLeft: 6, paddingRight: hasError ? 6 : 0 }}
+            className="pl-2 pr-1"
             accessibilityLabel="Alternar visibilidade da senha"
           >
             <Ionicons name={rightIcon} size={20} color={iconColor} />
           </Pressable>
         )}
         {hasError && (
-          <Ionicons name="alert-circle" size={18} color={theme.danger} />
+          <Ionicons name="alert-circle" size={18} color={theme.danger} className="ml-2" />
         )}
       </Pressable>
       {hasError && errorMessage ? (
-        <Text style={s.errorText}>{errorMessage}</Text>
+        <Text
+          className="text-xs font-medium mt-1.5 ml-1"
+          style={{ color: theme.danger }}
+        >
+          {errorMessage}
+        </Text>
       ) : null}
     </View>
   );

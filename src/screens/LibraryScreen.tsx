@@ -20,7 +20,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../theme/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { ThemeType } from '../theme/colors';
 import { StatusLeitura } from '../models/ItemEstante';
 import {
   ItemEstanteCompleto,
@@ -52,14 +51,12 @@ export default function LibraryScreen() {
   const { theme } = useTheme();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
-  const s = makeStyles(theme);
 
   const [activeFilter, setActiveFilter] = useState<TabFilter>('TODOS');
   const [estante, setEstante] = useState<ItemEstanteCompleto[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Estados para o Modal de Edição de Livro (Autor e Páginas)
   const [editingBook, setEditingBook] = useState<ItemEstanteCompleto | null>(null);
   const [customAuthor, setCustomAuthor] = useState<string>('');
   const [customPages, setCustomPages] = useState<string>('');
@@ -69,7 +66,6 @@ export default function LibraryScreen() {
   const authorInputRef = useRef<TextInput>(null);
   const pagesInputRef = useRef<TextInput>(null);
 
-  // Inscrição em tempo real na estante do usuário
   useEffect(() => {
     if (!user?.uid) {
       setEstante([]);
@@ -95,13 +91,11 @@ export default function LibraryScreen() {
     return () => unsubscribe();
   }, [user?.uid]);
 
-  // Filtragem por aba selecionada
   const filteredBooks = useMemo(() => {
     if (activeFilter === 'TODOS') return estante;
     return estante.filter((item) => item.status === activeFilter);
   }, [estante, activeFilter]);
 
-  // Contadores para cada aba
   const counts = useMemo(() => ({
     TODOS: estante.length,
     LENDO: estante.filter((i) => i.status === 'LENDO').length,
@@ -112,19 +106,18 @@ export default function LibraryScreen() {
   const getStatusStyle = (status: StatusLeitura) => {
     switch (status) {
       case 'LENDO':
-        return { bg: theme.accent + '20', text: theme.accentText, label: 'Lendo' };
+        return { bg: 'bg-accent/20', text: 'text-accentText', label: 'Lendo' };
       case 'LIDO':
-        return { bg: theme.success + '20', text: theme.success, label: 'Lido' };
+        return { bg: 'bg-success/20', text: 'text-success', label: 'Lido' };
       case 'NA_FILA':
-        return { bg: theme.warning + '20', text: theme.warning, label: 'Na Fila' };
+        return { bg: 'bg-warning/20', text: 'text-warning', label: 'Na Fila' };
       default:
-        return { bg: theme.textMuted + '20', text: theme.textMuted, label: status };
+        return { bg: 'bg-textMuted/20', text: 'text-textMuted', label: status };
     }
   };
 
   const handleStatusChange = async (item: ItemEstanteCompleto, newStatus: StatusLeitura) => {
     if (!user?.uid || !item.id) return;
-
     try {
       await updateBookStatus(user.uid, item.id, newStatus);
     } catch {
@@ -137,9 +130,7 @@ export default function LibraryScreen() {
     setCustomAuthor(item.livro.autor || '');
     setCustomPages(String(item.livro.totalPaginas || ''));
     setFocusField('author');
-    setTimeout(() => {
-      authorInputRef.current?.focus();
-    }, 150);
+    setTimeout(() => authorInputRef.current?.focus(), 150);
   };
 
   const handleOpenEditPagesModal = (item: ItemEstanteCompleto) => {
@@ -147,9 +138,7 @@ export default function LibraryScreen() {
     setCustomAuthor(item.livro.autor || '');
     setCustomPages(String(item.livro.totalPaginas || ''));
     setFocusField('pages');
-    setTimeout(() => {
-      pagesInputRef.current?.focus();
-    }, 150);
+    setTimeout(() => pagesInputRef.current?.focus(), 150);
   };
 
   const handleCloseEditModal = () => {
@@ -185,7 +174,6 @@ export default function LibraryScreen() {
         autor: trimmedAuthor,
         totalPaginas: parsedPages,
       });
-
       handleCloseEditModal();
       Alert.alert('Sucesso! ✨', 'Informações do livro atualizadas com sucesso.');
     } catch {
@@ -233,19 +221,9 @@ export default function LibraryScreen() {
           text: opt.label,
           onPress: () => handleStatusChange(item, opt.status),
         })),
-        {
-          text: '✍️ Corrigir Autor',
-          onPress: () => handleOpenEditAuthorModal(item),
-        },
-        {
-          text: '📄 Editar Total de Páginas',
-          onPress: () => handleOpenEditPagesModal(item),
-        },
-        {
-          text: '🗑️ Remover da Estante',
-          style: 'destructive' as const,
-          onPress: () => handleRemoveBook(item),
-        },
+        { text: '✍️ Corrigir Autor', onPress: () => handleOpenEditAuthorModal(item) },
+        { text: '📄 Editar Total de Páginas', onPress: () => handleOpenEditPagesModal(item) },
+        { text: '🗑️ Remover da Estante', style: 'destructive' as const, onPress: () => handleRemoveBook(item) },
         { text: 'Cancelar', style: 'cancel' as const },
       ]
     );
@@ -260,66 +238,80 @@ export default function LibraryScreen() {
 
     return (
       <TouchableOpacity
-        style={s.bookCard}
+        className="flex-row p-3.5 rounded-2xl border border-cardBorder bg-card items-center shadow-sm elevation-2"
         onPress={() => handleBookOptions(item)}
         activeOpacity={0.85}
       >
         {/* Capa */}
-        <View style={[s.bookCover, { backgroundColor: coverBg }]}>
+        <View
+          className="w-[58px] h-[84px] rounded-xl overflow-hidden mr-3.5 items-center justify-center border border-cardBorder"
+          style={{ backgroundColor: coverBg }}
+        >
           {item.livro.urlCapa ? (
-            <Image source={{ uri: item.livro.urlCapa }} style={s.coverImage} resizeMode="cover" />
+            <Image
+              source={{ uri: item.livro.urlCapa }}
+              className="w-full h-full"
+              resizeMode="cover"
+            />
           ) : (
-            <View style={s.coverPlaceholder}>
-              <Ionicons name="book-outline" size={26} color={theme.accentText} />
-            </View>
+            <Ionicons name="book-outline" size={24} color={theme.accentText} />
           )}
         </View>
 
         {/* Info */}
-        <View style={s.bookInfo}>
-          <Text style={s.bookTitle} numberOfLines={2}>
+        <View className="flex-1 justify-center mr-1">
+          <Text
+            className="text-[15px] font-bold leading-5 mb-0.5 text-textPrimary"
+            numberOfLines={2}
+          >
             {item.livro.titulo}
           </Text>
-          <Text style={s.bookAuthor} numberOfLines={1}>
+          <Text
+            className="text-xs font-medium mb-2 text-textSecondary"
+            numberOfLines={1}
+          >
             {item.livro.autor}
           </Text>
 
           {/* Badge de status */}
-          <View style={[s.statusBadge, { backgroundColor: statusStyle.bg }]}>
-            <Text style={[s.statusBadgeText, { color: statusStyle.text }]}>
+          <View
+            className={`self-start px-2 py-0.5 rounded-md mb-1.5 ${statusStyle.bg}`}
+          >
+            <Text className={`text-[10px] font-bold uppercase ${statusStyle.text}`}>
               {statusStyle.label}
             </Text>
           </View>
 
           {/* Barra de progresso para livros em leitura */}
           {item.status === 'LENDO' && item.livro.totalPaginas > 0 && (
-            <View style={s.progressSection}>
-              <View style={s.progressBarTrack}>
+            <View className="mt-1">
+              <View className="h-1.5 rounded-full overflow-hidden mb-1 bg-cardBorder">
                 <View
-                  style={[
-                    s.progressBarFill,
-                    { width: `${progress}%`, backgroundColor: theme.accent },
-                  ]}
+                  className="h-full rounded-full bg-accent"
+                  style={{ width: `${progress}%` }}
                 />
               </View>
-              <Text style={s.progressText}>
+              <Text className="text-[10px] font-medium text-textSecondary">
                 {item.progressoPaginas}/{item.livro.totalPaginas} pág. ({progress}%)
               </Text>
             </View>
           )}
 
-          {/* Páginas para livros lidos ou na fila */}
           {item.status !== 'LENDO' && item.livro.totalPaginas > 0 && (
-            <Text style={s.pagesText}>{item.livro.totalPaginas} páginas</Text>
+            <Text className="text-[11px] font-medium text-textSecondary">
+              {item.livro.totalPaginas} páginas
+            </Text>
           )}
           {(!item.livro.totalPaginas || item.livro.totalPaginas === 0) && (
-            <Text style={[s.pagesText, { color: theme.warning }]}>Páginas não informadas (toque para editar)</Text>
+            <Text className="text-[10px] font-medium text-warning">
+              Páginas não informadas (toque para editar)
+            </Text>
           )}
         </View>
 
         {/* Ícone de opções */}
         <TouchableOpacity
-          style={s.optionsButton}
+          className="p-2 ml-1"
           onPress={() => handleBookOptions(item)}
           activeOpacity={0.7}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -331,22 +323,24 @@ export default function LibraryScreen() {
   };
 
   return (
-    <View style={[s.container, { paddingTop: insets.top, paddingHorizontal: 20 }]}>
+    <View className="flex-1 bg-bg px-5" style={{ paddingTop: insets.top }}>
       {/* Header */}
-      <View style={s.header}>
+      <View className="flex-row justify-between items-center mb-5 pt-2">
         <View>
-          <Text style={s.headerTitle}>Minha Biblioteca</Text>
-          <Text style={s.headerSubtitle}>
+          <Text className="text-2xl font-extrabold tracking-tight text-textPrimary">
+            Minha Biblioteca
+          </Text>
+          <Text className="text-xs font-medium mt-0.5 text-textSecondary">
             {estante.length} livro{estante.length !== 1 ? 's' : ''} na estante
           </Text>
         </View>
-        <View style={s.headerIconCircle}>
+        <View className="w-11 h-11 rounded-full items-center justify-center border border-accent/35 bg-accent/20">
           <Ionicons name="library" size={22} color={theme.accent} />
         </View>
       </View>
 
       {/* Tabs de Filtro */}
-      <View style={s.tabsContainer}>
+      <View className="flex-row rounded-full border border-cardBorder bg-card p-1 mb-4 shadow-xs">
         {TABS.map((tab) => {
           const isActive = activeFilter === tab.key;
           const count = counts[tab.key];
@@ -354,7 +348,7 @@ export default function LibraryScreen() {
           return (
             <TouchableOpacity
               key={tab.key}
-              style={[s.tab, isActive && s.tabActive]}
+              className="flex-1 flex-row items-center justify-center py-2.5 rounded-full overflow-hidden gap-1.5"
               onPress={() => setActiveFilter(tab.key)}
               activeOpacity={0.8}
             >
@@ -366,11 +360,23 @@ export default function LibraryScreen() {
                   style={[StyleSheet.absoluteFill, { borderRadius: 999 }]}
                 />
               ) : null}
-              <Text style={[s.tabText, isActive && s.tabTextActive]}>
+              <Text
+                className={`text-xs font-semibold ${
+                  isActive ? 'text-bg' : 'text-textMuted'
+                }`}
+              >
                 {tab.label}
               </Text>
-              <View style={[s.tabCountBadge, isActive && s.tabCountBadgeActive]}>
-                <Text style={[s.tabCountText, isActive && s.tabCountTextActive]}>
+              <View
+                className={`px-1.5 py-0.5 rounded-full min-w-4 items-center justify-center ${
+                  isActive ? 'bg-black/20' : 'bg-cardBorder'
+                }`}
+              >
+                <Text
+                  className={`text-[10px] font-bold ${
+                    isActive ? 'text-bg' : 'text-textMuted'
+                  }`}
+                >
                   {count}
                 </Text>
               </View>
@@ -381,25 +387,27 @@ export default function LibraryScreen() {
 
       {/* Conteúdo */}
       {loading ? (
-        <View style={s.loadingContainer}>
+        <View className="flex-1 items-center justify-center py-12">
           <ActivityIndicator size="large" color={theme.accent} />
-          <Text style={s.loadingText}>Carregando sua biblioteca...</Text>
+          <Text className="text-xs font-medium mt-3 text-textSecondary">
+            Carregando sua biblioteca...
+          </Text>
         </View>
       ) : filteredBooks.length === 0 ? (
-        <View style={s.emptyState}>
-          <View style={s.emptyIconCircle}>
+        <View className="flex-1 items-center justify-center py-16 px-6">
+          <View className="w-18 h-18 rounded-full items-center justify-center mb-4 bg-accent/20">
             <Ionicons
               name={activeFilter === 'TODOS' ? 'library-outline' : 'book-outline'}
               size={36}
               color={theme.accent}
             />
           </View>
-          <Text style={s.emptyTitle}>
+          <Text className="text-base font-bold text-center mb-1 text-textPrimary">
             {activeFilter === 'TODOS'
               ? 'Sua estante está vazia'
               : `Nenhum livro ${activeFilter === 'LENDO' ? 'em leitura' : activeFilter === 'LIDO' ? 'lido' : 'na fila'}`}
           </Text>
-          <Text style={s.emptySubtitle}>
+          <Text className="text-xs text-center leading-5 text-textSecondary">
             {activeFilter === 'TODOS'
               ? 'Busque e adicione livros para começar sua jornada de leitura!'
               : 'Os livros aparecerão aqui quando você alterar o status deles.'}
@@ -411,11 +419,8 @@ export default function LibraryScreen() {
           keyExtractor={(item) => item.id || item.livroId}
           renderItem={renderBookCard}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={[
-            s.booksList,
-            { paddingBottom: insets.bottom + 20 },
-          ]}
-          ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 90 }}
+          ItemSeparatorComponent={() => <View className="h-2.5" />}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -427,7 +432,7 @@ export default function LibraryScreen() {
         />
       )}
 
-      {/* Modal para Editar Livro (Autor e Total de Páginas) */}
+      {/* Modal para Editar Livro */}
       <Modal
         visible={!!editingBook}
         transparent
@@ -435,34 +440,38 @@ export default function LibraryScreen() {
         onRequestClose={handleCloseEditModal}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={s.modalOverlay}>
+          <View className="flex-1 bg-black/70 justify-center p-5">
             <KeyboardAwareScrollView
-              contentContainerStyle={s.modalKeyboardContainer}
+              contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
               enableOnAndroid={true}
               keyboardShouldPersistTaps="handled"
             >
-              <View style={s.modalCard}>
-                {/* Ícone e Cabeçalho */}
-                <View style={s.modalHeader}>
-                  <View style={s.modalIconCircle}>
+              <View className="rounded-3xl p-6 border border-cardBorder bg-card shadow-2xl">
+                {/* Cabeçalho */}
+                <View className="items-center mb-5">
+                  <View className="w-12 h-12 rounded-2xl items-center justify-center mb-2 bg-accent/20">
                     <Ionicons name="create-outline" size={26} color={theme.accent} />
                   </View>
-                  <Text style={s.modalTitle}>Editar Detalhes do Livro</Text>
+                  <Text className="text-lg font-bold text-center text-textPrimary">
+                    Editar Detalhes do Livro
+                  </Text>
                   {editingBook && (
-                    <Text style={s.modalBookTitle} numberOfLines={2}>
+                    <Text className="text-xs text-center mt-1 px-4 text-textSecondary" numberOfLines={2}>
                       {editingBook.livro.titulo}
                     </Text>
                   )}
                 </View>
 
                 {/* Input de Autor */}
-                <View style={s.modalInputSection}>
-                  <Text style={s.modalInputLabel}>Nome do Autor:</Text>
-                  <View style={s.modalInputWrapper}>
-                    <Ionicons name="person-outline" size={18} color={theme.textMuted} style={{ marginRight: 10 }} />
+                <View className="mb-4">
+                  <Text className="text-xs font-semibold uppercase tracking-wider mb-1.5 text-label">
+                    Nome do Autor:
+                  </Text>
+                  <View className="flex-row items-center h-12 px-3.5 rounded-xl border border-inputBorder bg-inputBg">
+                    <Ionicons name="person-outline" size={18} color={theme.textMuted} className="mr-2.5" />
                     <TextInput
                       ref={authorInputRef}
-                      style={s.modalInput}
+                      className="flex-1 text-sm h-full text-textPrimary"
                       value={customAuthor}
                       onChangeText={setCustomAuthor}
                       placeholder="Ex: J.K. Rowling, Machado de Assis"
@@ -475,13 +484,15 @@ export default function LibraryScreen() {
                 </View>
 
                 {/* Input de Páginas */}
-                <View style={s.modalInputSection}>
-                  <Text style={s.modalInputLabel}>Número Total de Páginas:</Text>
-                  <View style={s.modalInputWrapper}>
-                    <Ionicons name="book-outline" size={18} color={theme.textMuted} style={{ marginRight: 10 }} />
+                <View className="mb-6">
+                  <Text className="text-xs font-semibold uppercase tracking-wider mb-1.5 text-label">
+                    Número Total de Páginas:
+                  </Text>
+                  <View className="flex-row items-center h-12 px-3.5 rounded-xl border border-inputBorder bg-inputBg">
+                    <Ionicons name="book-outline" size={18} color={theme.textMuted} className="mr-2.5" />
                     <TextInput
                       ref={pagesInputRef}
-                      style={s.modalInput}
+                      className="flex-1 text-sm h-full text-textPrimary"
                       value={customPages}
                       onChangeText={setCustomPages}
                       placeholder="Ex: 350"
@@ -495,18 +506,20 @@ export default function LibraryScreen() {
                 </View>
 
                 {/* Botões de Ação */}
-                <View style={s.modalActions}>
+                <View className="flex-row gap-3">
                   <TouchableOpacity
-                    style={s.modalCancelButton}
+                    className="flex-1 h-12 rounded-xl items-center justify-center border border-cardBorder"
                     onPress={handleCloseEditModal}
                     disabled={savingBook}
                     activeOpacity={0.7}
                   >
-                    <Text style={s.modalCancelButtonText}>Cancelar</Text>
+                    <Text className="text-xs font-semibold text-textSecondary">
+                      Cancelar
+                    </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={s.modalSaveButton}
+                    className="flex-1 h-12 rounded-xl items-center justify-center flex-row shadow-md bg-primary"
                     onPress={handleSaveBookDetails}
                     disabled={savingBook}
                     activeOpacity={0.85}
@@ -515,8 +528,10 @@ export default function LibraryScreen() {
                       <ActivityIndicator size="small" color={theme.bg} />
                     ) : (
                       <>
-                        <Ionicons name="checkmark" size={18} color={theme.bg} style={{ marginRight: 6 }} />
-                        <Text style={s.modalSaveButtonText}>Salvar</Text>
+                        <Ionicons name="checkmark" size={18} color={theme.bg} className="mr-1.5" />
+                        <Text className="text-xs font-bold text-bg">
+                          Salvar
+                        </Text>
                       </>
                     )}
                   </TouchableOpacity>
@@ -528,379 +543,4 @@ export default function LibraryScreen() {
       </Modal>
     </View>
   );
-}
-
-function makeStyles(t: ThemeType) {
-  return StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: t.bg,
-    },
-
-    /* Header */
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 20,
-    },
-    headerTitle: {
-      color: t.text,
-      fontSize: 26,
-      fontWeight: '800',
-      letterSpacing: -0.3,
-    },
-    headerSubtitle: {
-      color: t.textSecondary,
-      fontSize: 13,
-      fontWeight: '500',
-      marginTop: 3,
-    },
-    headerIconCircle: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
-      backgroundColor: t.accent + '20',
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 1,
-      borderColor: t.accent + '35',
-    },
-
-    /* Tabs */
-    tabsContainer: {
-      flexDirection: 'row',
-      backgroundColor: t.card,
-      borderRadius: 999,
-      borderWidth: 1,
-      borderColor: t.cardBorder,
-      padding: 4,
-      marginBottom: 18,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.05,
-      shadowRadius: 10,
-      elevation: 2,
-    },
-    tab: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: 10,
-      borderRadius: 999,
-      gap: 5,
-      overflow: 'hidden',
-    },
-    tabActive: {
-      backgroundColor: 'transparent',
-    },
-    tabText: {
-      color: t.textMuted,
-      fontSize: 13,
-      fontWeight: '600',
-      zIndex: 1,
-    },
-    tabTextActive: {
-      color: t.bg,
-      fontWeight: '700',
-      zIndex: 1,
-    },
-    tabCountBadge: {
-      backgroundColor: t.cardBorder,
-      borderRadius: 8,
-      paddingHorizontal: 6,
-      paddingVertical: 1,
-      minWidth: 20,
-      alignItems: 'center',
-      zIndex: 1,
-    },
-    tabCountBadgeActive: {
-      backgroundColor: 'rgba(255,255,255,0.25)',
-      zIndex: 1,
-    },
-    tabCountText: {
-      color: t.textMuted,
-      fontSize: 11,
-      fontWeight: '700',
-    },
-    tabCountTextActive: {
-      color: t.bg,
-    },
-
-    /* Books List */
-    booksList: {
-      gap: 0,
-    },
-    bookCard: {
-      flexDirection: 'row',
-      backgroundColor: t.card,
-      borderRadius: 20,
-      borderWidth: 1,
-      borderColor: t.cardBorder,
-      padding: 14,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.06,
-      shadowRadius: 12,
-      elevation: 3,
-    },
-    bookCover: {
-      width: 68,
-      height: 98,
-      borderRadius: 12,
-      overflow: 'hidden',
-      marginRight: 16,
-      borderWidth: 1,
-      borderColor: t.cardBorder,
-    },
-    coverImage: {
-      width: '100%',
-      height: '100%',
-    },
-    coverPlaceholder: {
-      width: '100%',
-      height: '100%',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    bookInfo: {
-      flex: 1,
-      justifyContent: 'center',
-    },
-    bookTitle: {
-      color: t.text,
-      fontSize: 15,
-      fontWeight: '700',
-      lineHeight: 20,
-      marginBottom: 3,
-    },
-    bookAuthor: {
-      color: t.textSecondary,
-      fontSize: 13,
-      fontWeight: '500',
-      marginBottom: 8,
-    },
-
-    /* Status Badge */
-    statusBadge: {
-      alignSelf: 'flex-start',
-      paddingHorizontal: 12,
-      paddingVertical: 5,
-      borderRadius: 999,
-      marginBottom: 8,
-    },
-    statusBadgeText: {
-      fontSize: 10,
-      fontWeight: '800',
-      textTransform: 'uppercase',
-      letterSpacing: 0.5,
-    },
-
-    /* Progress */
-    progressSection: {
-      marginTop: 2,
-    },
-    progressBarTrack: {
-      height: 6,
-      backgroundColor: t.inputBg,
-      borderRadius: 3,
-      overflow: 'hidden',
-      marginBottom: 4,
-    },
-    progressBarFill: {
-      height: '100%',
-      borderRadius: 3,
-    },
-    progressText: {
-      color: t.textMuted,
-      fontSize: 11,
-      fontWeight: '600',
-    },
-    pagesText: {
-      color: t.textMuted,
-      fontSize: 11,
-      fontWeight: '600',
-    },
-
-    /* Options */
-    optionsButton: {
-      alignSelf: 'flex-start',
-      padding: 4,
-      marginLeft: 4,
-    },
-
-    /* Loading */
-    loadingContainer: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 14,
-    },
-    loadingText: {
-      color: t.textSecondary,
-      fontSize: 14,
-      fontWeight: '500',
-    },
-
-    /* Empty State */
-    emptyState: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 32,
-    },
-    emptyIconCircle: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      backgroundColor: t.card,
-      borderWidth: 1,
-      borderColor: t.cardBorder,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 20,
-      shadowColor: t.accent,
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.15,
-      shadowRadius: 16,
-      elevation: 4,
-    },
-    emptyTitle: {
-      color: t.text,
-      fontSize: 18,
-      fontWeight: '700',
-      marginBottom: 8,
-      textAlign: 'center',
-    },
-    emptySubtitle: {
-      color: t.textSecondary,
-      fontSize: 14,
-      textAlign: 'center',
-      lineHeight: 20,
-    },
-
-    /* Modal Styles */
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.65)',
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-    },
-    modalKeyboardContainer: {
-      flexGrow: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      width: '100%',
-    },
-    modalCard: {
-      width: '100%',
-      maxWidth: 380,
-      backgroundColor: t.surface,
-      borderRadius: 22,
-      borderWidth: 1,
-      borderColor: t.cardBorder,
-      padding: 24,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.3,
-      shadowRadius: 16,
-      elevation: 10,
-    },
-    modalHeader: {
-      alignItems: 'center',
-      marginBottom: 18,
-    },
-    modalIconCircle: {
-      width: 52,
-      height: 52,
-      borderRadius: 26,
-      backgroundColor: t.accent + '20',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 12,
-      borderWidth: 1,
-      borderColor: t.accent + '35',
-    },
-    modalTitle: {
-      color: t.text,
-      fontSize: 18,
-      fontWeight: '800',
-      marginBottom: 4,
-      textAlign: 'center',
-    },
-    modalBookTitle: {
-      color: t.textSecondary,
-      fontSize: 13,
-      fontWeight: '500',
-      textAlign: 'center',
-      paddingHorizontal: 10,
-      lineHeight: 18,
-    },
-    modalInputSection: {
-      marginBottom: 16,
-    },
-    modalInputLabel: {
-      color: t.textSecondary,
-      fontSize: 13,
-      fontWeight: '600',
-      marginBottom: 6,
-    },
-    modalInputWrapper: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: t.inputBg,
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: t.inputBorder,
-      paddingHorizontal: 14,
-      height: 48,
-    },
-    modalInput: {
-      flex: 1,
-      color: t.text,
-      fontSize: 15,
-      fontWeight: '600',
-    },
-    modalActions: {
-      flexDirection: 'row',
-      gap: 12,
-      marginTop: 8,
-    },
-    modalCancelButton: {
-      flex: 1,
-      height: 46,
-      borderRadius: 999,
-      backgroundColor: t.card,
-      borderWidth: 1,
-      borderColor: t.cardBorder,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    modalCancelButtonText: {
-      color: t.textSecondary,
-      fontSize: 14,
-      fontWeight: '700',
-    },
-    modalSaveButton: {
-      flex: 1,
-      height: 46,
-      borderRadius: 999,
-      backgroundColor: t.primary,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      shadowColor: t.primaryShadow,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      elevation: 4,
-    },
-    modalSaveButtonText: {
-      color: t.bg,
-      fontSize: 14,
-      fontWeight: '800',
-    },
-  });
 }

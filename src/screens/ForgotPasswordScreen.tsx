@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
+  TextInput,
   TouchableOpacity,
-  StyleSheet,
   ScrollView,
   ActivityIndicator,
   Animated,
@@ -16,7 +16,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 
-import { DARK, ThemeType } from "../theme/colors";
 import { ThemeSlider } from "../components/ThemeSlider";
 import { InputField } from "../components/InputField";
 import { isValidEmail } from "../utils/validation";
@@ -49,7 +48,6 @@ export default function ForgotPasswordScreen({
   const shakeEmailAnim = useRef(new Animated.Value(0)).current;
 
   const insets = useSafeAreaInsets();
-  const s = makeStyles(theme);
 
   useEffect(() => {
     if (route?.params?.isDark !== undefined && route.params.isDark !== isDark) {
@@ -79,10 +77,6 @@ export default function ForgotPasswordScreen({
     }
     setEmailError("");
     return true;
-  };
-
-  const handleToggleTheme = () => {
-    toggleTheme();
   };
 
   const handleResetPassword = async () => {
@@ -127,61 +121,77 @@ export default function ForgotPasswordScreen({
   };
 
   return (
-    <View style={[s.safe, { paddingTop: insets.top }]}>
+    <View className="flex-1" style={{ backgroundColor: theme.bg, paddingTop: insets.top }}>
       <StatusBar style={theme.statusBar} />
 
       {/* Blobs decorativos */}
-      <View style={[s.blob, s.blobTopLeft]} />
-      <View style={[s.blob, s.blobBottomRight]} />
+      <View
+        className="absolute -top-20 -left-20 w-64 h-64 rounded-full opacity-15"
+        style={{ backgroundColor: theme.blobLeft }}
+      />
+      <View
+        className="absolute -bottom-16 -right-16 w-52 h-52 rounded-full opacity-15"
+        style={{ backgroundColor: theme.blobRight }}
+      />
 
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
-          contentContainerStyle={[
-            s.scrollContent,
-            { paddingBottom: insets.bottom + 24 },
-          ]}
+          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingBottom: insets.bottom + 24 }}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
-          showsVerticalScrollIndicator={true}
+          showsVerticalScrollIndicator={false}
         >
           {/* Slider de tema — topo direito */}
-          <View style={s.sliderPosition}>
+          <View className="self-end mb-6 z-10">
             <ThemeSlider
               isDark={isDark}
-              onToggle={handleToggleTheme}
+              onToggle={toggleTheme}
               anim={toggleAnim}
             />
           </View>
 
           {/* Header / Brand */}
-          <View style={s.header}>
-            <View style={s.logoCircle}>
-              <Ionicons
-                name="key-outline"
-                size={32}
-                color={theme.bg}
-              />
+          <View className="items-center mb-8">
+            <View
+              className="w-18 h-18 rounded-full items-center justify-center mb-3 shadow-lg elevation-6"
+              style={{ backgroundColor: theme.primary }}
+            >
+              <Ionicons name="key-outline" size={32} color={theme.bg} />
             </View>
-            <Text style={s.brandName}>MyLib</Text>
-            <Text style={s.brandSubtitle}>Recuperação de Acesso</Text>
+            <Text className="text-4xl font-extrabold tracking-wider" style={{ color: theme.text }}>
+              MyLib
+            </Text>
+            <Text className="text-xs mt-1 tracking-widest uppercase font-medium" style={{ color: theme.label }}>
+              Recuperação de Acesso
+            </Text>
           </View>
 
           {/* Card */}
-          <View style={s.card}>
+          <View
+            className="rounded-3xl p-6 border shadow-xl elevation-8 mb-6"
+            style={{
+              backgroundColor: theme.card,
+              borderColor: theme.cardBorder,
+            }}
+          >
             {!successSent ? (
               <>
-                <Text style={s.cardTitle}>Esqueceu a senha?</Text>
-                <Text style={s.cardSubtitle}>
+                <Text className="text-2xl font-bold mb-1" style={{ color: theme.text }}>
+                  Esqueceu a senha?
+                </Text>
+                <Text className="text-sm mb-6 leading-5" style={{ color: theme.textSecondary }}>
                   Informe seu e-mail para receber as instruções de redefinição de senha.
                 </Text>
 
                 {!!generalError && (
-                  <View style={s.errorBanner}>
-                    <Ionicons name="alert-circle-outline" size={18} color={theme.danger} style={{ marginRight: 8 }} />
-                    <Text style={s.errorBannerText}>{generalError}</Text>
+                  <View className="flex-row items-center p-3.5 rounded-xl border border-danger/40 bg-danger/10 mb-4">
+                    <Ionicons name="alert-circle-outline" size={18} color={theme.danger} className="mr-2" />
+                    <Text className="flex-1 text-xs font-medium" style={{ color: theme.danger }}>
+                      {generalError}
+                    </Text>
                   </View>
                 )}
 
@@ -202,10 +212,9 @@ export default function ForgotPasswordScreen({
                       validateEmail(email);
                     }}
                     theme={theme}
-                    s={s}
                     inputProps={{
                       placeholder: "seu@email.com",
-                      placeholderTextColor: theme.textSub,
+                      placeholderTextColor: theme.textMuted,
                       value: email,
                       onChangeText: setEmail,
                       keyboardType: "email-address",
@@ -220,9 +229,12 @@ export default function ForgotPasswordScreen({
                 </Animated.View>
 
                 {/* Botão Enviar Link */}
-                <Animated.View style={{ transform: [{ scale: scaleAnim }], marginTop: 12 }}>
+                <Animated.View style={{ transform: [{ scale: scaleAnim }] }} className="mt-3">
                   <TouchableOpacity
-                    style={[s.resetButton, loading && s.resetButtonDisabled]}
+                    className={`h-13 rounded-2xl items-center justify-center flex-row shadow-lg elevation-4 ${
+                      loading ? 'opacity-60' : ''
+                    }`}
+                    style={{ backgroundColor: theme.primary }}
                     onPress={handleResetPassword}
                     activeOpacity={0.85}
                     disabled={loading}
@@ -232,14 +244,11 @@ export default function ForgotPasswordScreen({
                     {loading ? (
                       <ActivityIndicator color={theme.bg} size="small" />
                     ) : (
-                      <View style={s.resetButtonContent}>
-                        <Text style={s.resetButtonText}>Enviar Link</Text>
-                        <Ionicons
-                          name="paper-plane-outline"
-                          size={18}
-                          color={theme.bg}
-                          style={s.resetArrow}
-                        />
+                      <View className="flex-row items-center">
+                        <Text className="text-base font-bold tracking-wide mr-2" style={{ color: theme.bg }}>
+                          Enviar Link
+                        </Text>
+                        <Ionicons name="paper-plane-outline" size={18} color={theme.bg} />
                       </View>
                     )}
                   </TouchableOpacity>
@@ -247,42 +256,54 @@ export default function ForgotPasswordScreen({
               </>
             ) : (
               /* Card de Sucesso */
-              <View style={s.successContainer}>
-                <View style={s.successIconCircle}>
+              <View className="items-center py-4">
+                <View className="mb-4">
                   <Ionicons name="checkmark-circle-outline" size={48} color={theme.primary} />
                 </View>
-                <Text style={s.cardTitle}>E-mail Enviado!</Text>
-                <Text style={s.successText}>
-                  Enviamos as instruções de redefinição para{"\n"}
-                  <Text style={s.emailHighlight}>{email}</Text>
+                <Text className="text-2xl font-bold mb-2 text-center" style={{ color: theme.text }}>
+                  E-mail Enviado!
                 </Text>
-                <View style={s.infoBox}>
-                  <Ionicons name="time-outline" size={16} color={theme.forgotText} style={{ marginRight: 6 }} />
-                  <Text style={s.infoText}>O link de redefinição expira em 30 minutos.</Text>
+                <Text className="text-sm text-center mb-6 leading-6" style={{ color: theme.textSecondary }}>
+                  Enviamos as instruções de redefinição para{"\n"}
+                  <Text className="font-bold" style={{ color: theme.primary }}>{email}</Text>
+                </Text>
+                <View
+                  className="flex-row items-center p-3 rounded-xl border border-accent/20 bg-accent/10 mb-6"
+                >
+                  <Ionicons name="time-outline" size={16} color={theme.forgotText} className="mr-2" />
+                  <Text className="text-xs flex-1" style={{ color: theme.forgotText }}>
+                    O link de redefinição expira em 30 minutos.
+                  </Text>
                 </View>
 
                 <TouchableOpacity
-                  style={s.resendButton}
+                  className="py-2.5 px-4 rounded-xl border border-cardBorder"
                   onPress={() => setSuccessSent(false)}
                   activeOpacity={0.7}
                   accessibilityLabel="Reenviar e-mail de recuperação"
                   id="btn-resend-email"
                 >
-                  <Text style={s.resendText}>Tentar outro e-mail</Text>
+                  <Text className="text-xs font-semibold" style={{ color: theme.textSecondary }}>
+                    Tentar outro e-mail
+                  </Text>
                 </TouchableOpacity>
               </View>
             )}
 
             {/* Link voltar para login */}
-            <View style={s.signInRow}>
-              <Text style={s.signInText}>Lembrou a senha? </Text>
+            <View className="flex-row items-center justify-center mt-6">
+              <Text className="text-xs" style={{ color: theme.signUpText }}>
+                Lembrou a senha?{" "}
+              </Text>
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => navigation.navigate("Login", { isDark })}
                 accessibilityLabel="Voltar para a tela de login"
                 id="btn-back-to-login"
               >
-                <Text style={s.signInLink}>Voltar ao Entrar</Text>
+                <Text className="text-xs font-bold" style={{ color: theme.signUpLink }}>
+                  Voltar ao Entrar
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -290,254 +311,4 @@ export default function ForgotPasswordScreen({
       </KeyboardAvoidingView>
     </View>
   );
-}
-
-// ─── Estilos dinâmicos ─────────────────────────────────────────────────────────
-function makeStyles(t: ThemeType) {
-  return StyleSheet.create({
-    safe: {
-      flex: 1,
-      backgroundColor: t.bg,
-    },
-    scrollContent: {
-      flexGrow: 1,
-      justifyContent: "flex-start",
-      paddingHorizontal: 24,
-    },
-    sliderPosition: {
-      alignSelf: "flex-end",
-      marginTop: 0,
-      marginBottom: 50,
-      zIndex: 10,
-    },
-
-    /* Blobs */
-    blob: {
-      position: "absolute",
-      borderRadius: 999,
-      opacity: 0.15,
-    },
-    blobTopLeft: {
-      top: -80,
-      left: -80,
-      width: 260,
-      height: 260,
-      backgroundColor: t.blobLeft,
-    },
-    blobBottomRight: {
-      bottom: -60,
-      right: -60,
-      width: 200,
-      height: 200,
-      backgroundColor: t.blobRight,
-    },
-
-    /* Header */
-    header: {
-      alignItems: "center",
-      marginBottom: 32,
-    },
-    logoCircle: {
-      width: 64,
-      height: 64,
-      borderRadius: 32,
-      backgroundColor: t.primary,
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: 12,
-      shadowColor: t.primaryShadow,
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.45,
-      shadowRadius: 16,
-      elevation: 12,
-    },
-    brandName: {
-      fontSize: 28,
-      fontWeight: "800",
-      color: t.text,
-      letterSpacing: 1.5,
-    },
-    brandSubtitle: {
-      fontSize: 13,
-      color: t.label,
-      marginTop: 4,
-      letterSpacing: 1.2,
-    },
-
-    /* Card */
-    card: {
-      backgroundColor: t.card,
-      borderRadius: 24,
-      padding: 28,
-      borderWidth: 1,
-      borderColor: t.cardBorder,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 12 },
-      shadowOpacity: 0.15,
-      shadowRadius: 24,
-      elevation: 16,
-    },
-    cardTitle: {
-      fontSize: 26,
-      fontWeight: "700",
-      color: t.text,
-      marginBottom: 4,
-    },
-    cardSubtitle: {
-      fontSize: 13,
-      color: t.textSub,
-      marginBottom: 28,
-      lineHeight: 18,
-    },
-
-    /* Campos */
-    fieldWrapper: { marginBottom: 16 },
-    label: {
-      fontSize: 11,
-      fontWeight: "700",
-      color: t.label,
-      marginBottom: 6,
-      letterSpacing: 1,
-    },
-    inputContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: t.inputBg,
-      borderRadius: 14,
-      borderWidth: 1.5,
-      borderColor: t.inputBorder,
-      paddingHorizontal: 14,
-      height: 52,
-    },
-    inputContainerFocused: {
-      borderColor: t.inputBorderFocus,
-      backgroundColor: t.inputBgFocus,
-      shadowColor: t.primary,
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.25,
-      shadowRadius: 8,
-      elevation: 4,
-    },
-    inputContainerError: {
-      borderColor: t.danger,
-      backgroundColor: t.bg === DARK.bg ? "rgba(224, 115, 107, 0.1)" : "#FFF5F5",
-      shadowColor: t.danger,
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.25,
-      shadowRadius: 8,
-      elevation: 4,
-    },
-    errorText: {
-      color: t.danger,
-      fontSize: 12,
-      marginTop: 5,
-      marginLeft: 2,
-      fontWeight: "500",
-    },
-    errorBanner: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: "rgba(224, 115, 107, 0.12)",
-      borderColor: "rgba(224, 115, 107, 0.3)",
-      borderWidth: 1,
-      borderRadius: 12,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-      marginBottom: 16,
-    },
-    errorBannerText: {
-      color: t.danger,
-      fontSize: 13,
-      fontWeight: "600",
-      flex: 1,
-    },
-    inputIcon: { marginRight: 10 },
-    input: {
-      flex: 1,
-      color: t.text,
-      fontSize: 15,
-      paddingVertical: 0,
-    },
-
-    /* Botão reset */
-    resetButton: {
-      backgroundColor: t.primary,
-      borderRadius: 14,
-      height: 54,
-      alignItems: "center",
-      justifyContent: "center",
-      shadowColor: t.primaryShadow,
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.45,
-      shadowRadius: 14,
-      elevation: 10,
-    },
-    resetButtonDisabled: { opacity: 0.7 },
-    resetButtonContent: {
-      flexDirection: "row",
-      alignItems: "center",
-    },
-    resetButtonText: {
-      color: t.bg,
-      fontSize: 16,
-      fontWeight: "800",
-      letterSpacing: 0.5,
-    },
-    resetArrow: {
-      marginLeft: 8,
-    },
-
-    /* Card Sucesso */
-    successContainer: {
-      alignItems: "center",
-      paddingVertical: 12,
-    },
-    successIconCircle: {
-      marginBottom: 12,
-    },
-    successText: {
-      fontSize: 14,
-      color: t.textSub,
-      textAlign: "center",
-      marginTop: 8,
-      lineHeight: 20,
-    },
-    emailHighlight: {
-      color: t.text,
-      fontWeight: "700",
-    },
-    infoBox: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: t.inputBg,
-      borderRadius: 10,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      marginTop: 16,
-      marginBottom: 16,
-    },
-    infoText: {
-      fontSize: 12,
-      color: t.forgotText,
-      fontWeight: "600",
-    },
-    resendButton: {
-      paddingVertical: 8,
-      paddingHorizontal: 16,
-    },
-    resendText: {
-      color: t.primary,
-      fontSize: 13,
-      fontWeight: "700",
-    },
-
-    /* Sign In Link */
-    signInRow: {
-      flexDirection: "row",
-      justifyContent: "center",
-      marginTop: 24,
-    },
-    signInText: { color: t.textSub, fontSize: 13 },
-    signInLink: { color: t.signUpLink, fontSize: 13, fontWeight: "700" },
-  });
 }

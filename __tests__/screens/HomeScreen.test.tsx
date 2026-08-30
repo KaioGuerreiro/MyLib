@@ -36,6 +36,8 @@ jest.mock('firebase/firestore', () => ({
   onSnapshot: jest.fn(() => jest.fn()),
 }));
 
+import { NavigationContainer } from '@react-navigation/native';
+
 describe('HomeScreen', () => {
   it('deve renderizar o nome do usuário e o controle de logout', async () => {
     const initialMetrics = {
@@ -47,7 +49,9 @@ describe('HomeScreen', () => {
       <SafeAreaProvider initialMetrics={initialMetrics}>
         <ThemeProvider>
           <AuthProvider>
-            <HomeScreen />
+            <NavigationContainer>
+              <HomeScreen />
+            </NavigationContainer>
           </AuthProvider>
         </ThemeProvider>
       </SafeAreaProvider>
