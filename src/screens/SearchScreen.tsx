@@ -434,8 +434,7 @@ export default function SearchScreen() {
                       colors={[theme.accent, theme.primary]}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
-                      style={StyleSheet.absoluteFill}
-                      borderRadius={20}
+                      style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
                     />
                   ) : null}
                   <Ionicons
@@ -517,8 +516,7 @@ export default function SearchScreen() {
                             colors={[theme.accent, theme.primary]}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
-                            style={StyleSheet.absoluteFill}
-                            borderRadius={20}
+                            style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
                           />
                         ) : null}
                         <Ionicons
