@@ -1,18 +1,21 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   Platform,
   Animated,
   LayoutChangeEvent,
-  PanResponder,
-  PanResponderGestureState,
+  Pressable,
 } from 'react-native';
 import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { GlassView, GlassContainer, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../theme/ThemeContext';
+import { ThemeType } from '../theme/colors';
 
 // Import Screens
 import HomeScreen from '../screens/HomeScreen';
@@ -28,334 +31,264 @@ const TAB_ICONS: Record<string, { active: keyof typeof Ionicons.glyphMap; inacti
   'Conquistas': { active: 'trophy', inactive: 'trophy-outline' },
 };
 
-const TAB_BAR_HEIGHT = 64;
-const BUBBLE_WIDTH = 58;
-const BUBBLE_HEIGHT = 48;
-const TAB_BAR_RADIUS = 32;
-const BUBBLE_RADIUS = 24;
+const TAB_BAR_HEIGHT = 62;
+const TAB_BAR_RADIUS = 31;
+const PADDING_H = 6;
+const PILL_HEIGHT = 50;
 
-const USE_GLASS = Platform.OS === 'ios' && isLiquidGlassAvailable();
+const isGlassSupported = () => {
+  try {
+    return Platform.OS === 'ios' && typeof isLiquidGlassAvailable === 'function' && isLiquidGlassAvailable();
+  } catch {
+    return false;
+  }
+};
+const USE_NATIVE_LIQUID_GLASS = isGlassSupported();
+
+interface TabItemProps {
+  name: string;
+  isFocused: boolean;
+  onPress: () => void;
+  isDark: boolean;
+  theme: ThemeType;
+}
+
+function TabItem({ name, isFocused, onPress, isDark, theme }: TabItemProps) {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const icons = TAB_ICONS[name] ?? { active: 'ellipse', inactive: 'ellipse-outline' };
+  const iconName = isFocused ? icons.active : icons.inactive;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.88,
+      useNativeDriver: true,
+      friction: 6,
+      tension: 180,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 5,
+      tension: 140,
+    }).start();
+  };
+
+  const activeColor = isDark ? '#FFFFFF' : theme.accentText;
+  const inactiveColor = isDark ? 'rgba(178, 182, 202, 0.70)' : '#6B7088';
+  const color = isFocused ? activeColor : inactiveColor;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={styles.tabItem}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: isFocused }}
+      accessibilityLabel={name}
+      hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+    >
+      <Animated.View style={[styles.tabItemContent, { transform: [{ scale: scaleAnim }] }]}>
+        <Ionicons name={iconName} size={22} color={color} />
+        <Text
+          numberOfLines={1}
+          style={[
+            styles.tabLabel,
+            {
+              color,
+              fontWeight: isFocused ? '600' : '500',
+              opacity: isFocused ? 1 : 0.85,
+            },
+          ]}
+        >
+          {name}
+        </Text>
+      </Animated.View>
+    </Pressable>
+  );
+}
 
 function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const { theme, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const [containerWidth, setContainerWidth] = useState(0);
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
   const numTabs = state.routes.length;
-  const tabWidth = containerWidth > 0 ? containerWidth / numTabs : 0;
+  const availableWidth = containerWidth > 0 ? containerWidth - PADDING_H * 2 : 0;
+  const tabWidth = availableWidth > 0 ? availableWidth / numTabs : 0;
 
-  // Animação de posição e deformação da bolha líquida
+  // Animação de deslizamento da pílula ativa com física de mola Apple
   const slideAnim = useRef(new Animated.Value(0)).current;
   const currentX = useRef(0);
-  const scaleXAnim = useRef(new Animated.Value(1)).current;
-  const scaleYAnim = useRef(new Animated.Value(1)).current;
-  const isDragging = useRef(false);
-  const dragStartX = useRef(0);
-  const lastHover = useRef(state.index);
-
-  useEffect(() => {
-    const id = slideAnim.addListener(({ value }) => {
-      currentX.current = value;
-    });
-    return () => slideAnim.removeListener(id);
-  }, [slideAnim]);
-
-  const getTabPosition = (index: number, width: number) => {
-    const tWidth = width / numTabs;
-    return index * tWidth + (tWidth - BUBBLE_WIDTH) / 2;
-  };
-
-  // Transição fluida de posição com física de mola Apple
-  useEffect(() => {
-    if (tabWidth > 0 && !isDragging.current) {
-      const targetX = getTabPosition(state.index, containerWidth);
-
-      Animated.parallel([
-        Animated.sequence([
-          Animated.timing(scaleXAnim, {
-            toValue: 1.15,
-            duration: 80,
-            useNativeDriver: true,
-          }),
-          Animated.spring(scaleXAnim, {
-            toValue: 1,
-            friction: 7,
-            tension: 140,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.sequence([
-          Animated.timing(scaleYAnim, {
-            toValue: 0.90,
-            duration: 80,
-            useNativeDriver: true,
-          }),
-          Animated.spring(scaleYAnim, {
-            toValue: 1,
-            friction: 7,
-            tension: 140,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.spring(slideAnim, {
-          toValue: targetX,
-          friction: 8,
-          tension: 100,
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-      lastHover.current = state.index;
-    }
-  }, [state.index, tabWidth, containerWidth]);
-
-  // Gesto PanResponder para arrastar a bolha líquida
-  const panResponder = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: (_, gestureState) =>
-          Math.abs(gestureState.dx) > 3,
-
-        onPanResponderGrant: () => {
-          isDragging.current = true;
-          dragStartX.current = currentX.current;
-
-          Animated.parallel([
-            Animated.spring(scaleXAnim, {
-              toValue: 1.08,
-              friction: 6,
-              useNativeDriver: true,
-            }),
-            Animated.spring(scaleYAnim, {
-              toValue: 0.94,
-              friction: 6,
-              useNativeDriver: true,
-            }),
-          ]).start();
-
-          if (Platform.OS === 'ios') {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          }
-        },
-
-        onPanResponderMove: (_, gestureState: PanResponderGestureState) => {
-          if (!tabWidth) return;
-
-          const minX = (tabWidth - BUBBLE_WIDTH) / 2 - 8;
-          const maxX = (numTabs - 1) * tabWidth + (tabWidth - BUBBLE_WIDTH) / 2 + 8;
-          let newX = dragStartX.current + gestureState.dx;
-
-          // Resistência elástica suave
-          if (newX < minX) {
-            newX = minX - Math.sqrt(Math.abs(newX - minX)) * 2;
-          } else if (newX > maxX) {
-            newX = maxX + Math.sqrt(newX - maxX) * 2;
-          }
-
-          slideAnim.setValue(newX);
-
-          const bubbleCenter = newX + BUBBLE_WIDTH / 2;
-          const currentTab = Math.min(
-            Math.max(Math.floor(bubbleCenter / tabWidth), 0),
-            numTabs - 1
-          );
-
-          if (currentTab !== lastHover.current) {
-            lastHover.current = currentTab;
-            setHoverIndex(currentTab);
-            if (Platform.OS === 'ios') {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }
-          }
-        },
-
-        onPanResponderRelease: (_, gestureState: PanResponderGestureState) => {
-          isDragging.current = false;
-          setHoverIndex(null);
-
-          if (!tabWidth) return;
-
-          let targetIndex: number;
-
-          if (Math.abs(gestureState.dx) < 6) {
-            const touchX = gestureState.x0;
-            targetIndex = Math.min(
-              Math.max(Math.floor((touchX - 24) / tabWidth), 0),
-              numTabs - 1
-            );
-          } else {
-            const finalCenter = currentX.current + BUBBLE_WIDTH / 2;
-            targetIndex = Math.min(
-              Math.max(Math.round((finalCenter - tabWidth / 2) / tabWidth), 0),
-              numTabs - 1
-            );
-          }
-
-          const targetX = getTabPosition(targetIndex, containerWidth);
-
-          Animated.parallel([
-            Animated.spring(scaleXAnim, {
-              toValue: 1,
-              friction: 6,
-              tension: 130,
-              useNativeDriver: true,
-            }),
-            Animated.spring(scaleYAnim, {
-              toValue: 1,
-              friction: 6,
-              tension: 130,
-              useNativeDriver: true,
-            }),
-            Animated.spring(slideAnim, {
-              toValue: targetX,
-              friction: 7,
-              tension: 110,
-              useNativeDriver: true,
-            }),
-          ]).start();
-
-          if (targetIndex !== state.index) {
-            if (Platform.OS === 'ios') {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            }
-            navigation.navigate(state.routes[targetIndex].name);
-          }
-        },
-
-        onPanResponderTerminate: () => {
-          isDragging.current = false;
-          setHoverIndex(null);
-          const targetX = getTabPosition(state.index, containerWidth);
-          Animated.spring(slideAnim, {
-            toValue: targetX,
-            friction: 7,
-            useNativeDriver: true,
-          }).start();
-        },
-      }),
-    [tabWidth, containerWidth, numTabs, state.index, navigation, state.routes]
-  );
 
   const handleLayout = (e: LayoutChangeEvent) => {
     const width = e.nativeEvent.layout.width;
-    setContainerWidth(width);
-    if (width > 0) {
-      const initialX = getTabPosition(state.index, width);
+    if (width > 0 && width !== containerWidth) {
+      setContainerWidth(width);
+      const innerWidth = width - PADDING_H * 2;
+      const tWidth = innerWidth / numTabs;
+      const initialX = PADDING_H + state.index * tWidth;
       slideAnim.setValue(initialX);
       currentX.current = initialX;
     }
   };
 
-  // Bolha de Liquid Glass pura (estilo nativo Apple)
-  const renderLiquidBubble = () => {
-    if (tabWidth === 0) return null;
-
-    if (USE_GLASS) {
-      return (
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            styles.bubbleContainer,
-            {
-              transform: [
-                { translateX: slideAnim },
-                { scaleX: scaleXAnim },
-                { scaleY: scaleYAnim },
-              ],
-            },
-          ]}
-        >
-          {/* GlassView com isInteractive para refração real e specular highlight do iOS */}
-          <GlassView
-            style={styles.liquidGlassBubble}
-            glassEffectStyle="clear"
-            isInteractive
-          />
-        </Animated.View>
-      );
+  useEffect(() => {
+    if (tabWidth > 0) {
+      const targetX = PADDING_H + state.index * tabWidth;
+      Animated.spring(slideAnim, {
+        toValue: targetX,
+        friction: 8,
+        tension: 110,
+        useNativeDriver: true,
+      }).start();
+      currentX.current = targetX;
     }
+  }, [state.index, tabWidth, slideAnim]);
+
+  const handleTabPress = useCallback(
+    (route: (typeof state.routes)[0], index: number) => {
+      if (Platform.OS === 'ios') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+
+      const event = navigation.emit({
+        type: 'tabPress',
+        target: route.key,
+        canPreventDefault: true,
+      });
+
+      if (state.index !== index && !event.defaultPrevented) {
+        navigation.navigate(route.name);
+      }
+    },
+    [navigation, state]
+  );
+
+  // Pílula ativa translúcida com a cor de destaque do tema (menos transparente, com presença e profundidade)
+  const renderHighlightPill = () => {
+    if (tabWidth === 0) return null;
 
     return (
       <Animated.View
         pointerEvents="none"
         style={[
-          styles.bubbleContainer,
-          styles.fallbackBubble,
+          styles.highlightPill,
           {
-            backgroundColor: `${theme.accent}30`,
-            borderColor: `${theme.accent}60`,
-            transform: [
-              { translateX: slideAnim },
-              { scaleX: scaleXAnim },
-              { scaleY: scaleYAnim },
-            ],
+            width: tabWidth,
+            transform: [{ translateX: slideAnim }],
+            backgroundColor: isDark ? 'rgba(145, 132, 217, 0.48)' : 'rgba(108, 92, 231, 0.24)',
+            borderColor: isDark ? 'rgba(215, 210, 255, 0.55)' : 'rgba(108, 92, 231, 0.40)',
+            shadowColor: isDark ? '#9184D9' : '#6C5CE7',
+            shadowOpacity: isDark ? 0.32 : 0.18,
+            shadowOffset: { width: 0, height: 2 },
+            shadowRadius: 6,
+            elevation: 3,
           },
         ]}
-      />
+      >
+        {USE_NATIVE_LIQUID_GLASS && (
+          <GlassView
+            style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+            glassEffectStyle="clear"
+            tintColor={isDark ? 'rgba(145, 132, 217, 0.30)' : 'rgba(108, 92, 231, 0.18)'}
+            isInteractive
+          />
+        )}
+      </Animated.View>
     );
   };
 
-  const content = (
+  // Fundo translúcido com tonalidade personalizada e materiais autênticos Apple
+  const renderGlassBackground = () => (
     <>
-      {renderLiquidBubble()}
-      {state.routes.map((route, index) => {
-        const isFocused = state.index === index;
-        const isHovered = hoverIndex === index;
-        const isActive = hoverIndex !== null ? isHovered : isFocused;
+      {USE_NATIVE_LIQUID_GLASS ? (
+        <GlassView
+          style={[StyleSheet.absoluteFill, { borderRadius: TAB_BAR_RADIUS }]}
+          glassEffectStyle="regular"
+          tintColor={isDark ? 'rgba(42, 34, 68, 0.55)' : 'rgba(238, 233, 255, 0.60)'}
+          colorScheme={isDark ? 'dark' : 'light'}
+        />
+      ) : (
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              borderRadius: TAB_BAR_RADIUS,
+              backgroundColor: isDark ? 'rgba(28, 26, 46, 0.90)' : 'rgba(248, 246, 255, 0.92)',
+            },
+          ]}
+        />
+      )}
 
-        const icons = TAB_ICONS[route.name] ?? { active: 'home', inactive: 'home-outline' };
-        const iconName = isActive ? icons.active : icons.inactive;
-
-        return (
-          <View
-            key={route.key}
-            style={styles.tabItem}
-            pointerEvents="none"
-            accessibilityRole="tab"
-            accessibilityState={{ selected: isFocused }}
-          >
-            <Ionicons
-              name={iconName}
-              size={24}
-              color={
-                isActive
-                  ? (isDark ? '#FFFFFF' : theme.accent)
-                  : (isDark ? '#989AA8' : '#75798C')
-              }
-            />
-          </View>
-        );
-      })}
+      {/* Sutil brilho especular de luz na curvatura superior do vidro com tonalidade do tema */}
+      <LinearGradient
+        colors={
+          isDark
+            ? ['rgba(210, 206, 253, 0.16)', 'rgba(145, 132, 217, 0.04)', 'transparent']
+            : ['rgba(255, 255, 255, 0.95)', 'rgba(238, 233, 255, 0.40)', 'transparent']
+        }
+        locations={[0, 0.4, 1]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={[StyleSheet.absoluteFill, { borderRadius: TAB_BAR_RADIUS }]}
+      />
     </>
   );
 
-  if (USE_GLASS) {
-    return (
-      <View style={styles.tabBarShadowWrapper}>
-        <GlassContainer spacing={12} style={styles.tabBarContainer} {...panResponder.panHandlers}>
-          {/* Fundo da barra com Liquid Glass nativo */}
-          <GlassView
-            onLayout={handleLayout}
-            style={styles.glassBackground}
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-          />
-          {content}
-        </GlassContainer>
-      </View>
-    );
-  }
+  const bottomMargin = Math.max(insets.bottom, 12);
+
+  const borderStyle = {
+    borderColor: isDark ? 'rgba(145, 132, 217, 0.25)' : 'rgba(108, 92, 231, 0.16)',
+    borderTopColor: isDark ? 'rgba(210, 206, 253, 0.45)' : 'rgba(255, 255, 255, 0.98)',
+  };
+
+  const shadowStyle = {
+    shadowColor: isDark ? '#7A68C9' : '#4C3ACB',
+    shadowOpacity: isDark ? 0.35 : 0.12,
+    shadowRadius: isDark ? 20 : 18,
+    elevation: isDark ? 10 : 8,
+    shadowOffset: { width: 0, height: 8 },
+  };
+
+  const containerContent = (
+    <>
+      {renderGlassBackground()}
+      {renderHighlightPill()}
+      {state.routes.map((route, index) => (
+        <TabItem
+          key={route.key}
+          name={route.name}
+          isFocused={state.index === index}
+          onPress={() => handleTabPress(route, index)}
+          isDark={isDark}
+          theme={theme}
+        />
+      ))}
+    </>
+  );
 
   return (
-    <View style={styles.tabBarShadowWrapper}>
-      <View
-        onLayout={handleLayout}
-        style={[styles.tabBarContainer, styles.tabBarFallback]}
-        {...panResponder.panHandlers}
-      >
-        {content}
-      </View>
+    <View style={[styles.tabBarShadowWrapper, shadowStyle, { bottom: bottomMargin }]}>
+      {USE_NATIVE_LIQUID_GLASS ? (
+        <GlassContainer
+          spacing={12}
+          onLayout={handleLayout}
+          style={[styles.tabBarContainer, borderStyle]}
+        >
+          {containerContent}
+        </GlassContainer>
+      ) : (
+        <View
+          onLayout={handleLayout}
+          style={[styles.tabBarContainer, borderStyle]}
+        >
+          {containerContent}
+        </View>
+      )}
     </View>
   );
 }
@@ -376,16 +309,10 @@ export function TabNavigator() {
 const styles = StyleSheet.create({
   tabBarShadowWrapper: {
     position: 'absolute',
-    bottom: 24,
-    left: 24,
-    right: 24,
+    left: 20,
+    right: 20,
     height: TAB_BAR_HEIGHT,
     borderRadius: TAB_BAR_RADIUS,
-    shadowColor: '#000',
-    shadowOpacity: 0.22,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 16,
-    elevation: 10,
   },
   tabBarContainer: {
     flex: 1,
@@ -393,33 +320,16 @@ const styles = StyleSheet.create({
     height: TAB_BAR_HEIGHT,
     borderRadius: TAB_BAR_RADIUS,
     alignItems: 'center',
-  },
-  glassBackground: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: TAB_BAR_RADIUS,
-  },
-  tabBarFallback: {
-    backgroundColor: '#1C1C22',
+    paddingHorizontal: PADDING_H,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: TAB_BAR_RADIUS,
-    overflow: 'hidden',
   },
-  bubbleContainer: {
+  highlightPill: {
     position: 'absolute',
-    width: BUBBLE_WIDTH,
-    height: BUBBLE_HEIGHT,
-    borderRadius: BUBBLE_RADIUS,
-    top: (TAB_BAR_HEIGHT - BUBBLE_HEIGHT) / 2,
+    height: PILL_HEIGHT,
+    borderRadius: 20,
+    top: (TAB_BAR_HEIGHT - PILL_HEIGHT) / 2,
+    borderWidth: 1,
     zIndex: 1,
-  },
-  liquidGlassBubble: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: BUBBLE_RADIUS,
-  },
-  fallbackBubble: {
-    borderRadius: BUBBLE_RADIUS,
-    borderWidth: 1.5,
   },
   tabItem: {
     flex: 1,
@@ -427,5 +337,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 2,
+  },
+  tabItemContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+  },
+  tabLabel: {
+    fontSize: 11,
+    letterSpacing: 0.2,
   },
 });

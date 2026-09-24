@@ -1,5 +1,6 @@
 {
   "projects": {
+    "default": "mylib-2026",
     "MyLib": "mylib-2026"
   },
   "targets": {},

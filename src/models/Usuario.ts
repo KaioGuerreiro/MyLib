@@ -5,4 +5,5 @@ export interface Usuario {
   xpTotal: number;
   nivelAtual: number;
   ofensivaAtual: number;
+  ultimaLeituraData?: string | null;
 }

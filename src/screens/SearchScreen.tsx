@@ -75,6 +75,17 @@ export default function SearchScreen() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<TextInput>(null);
 
+  const loadRecentSearches = async () => {
+    try {
+      const stored = await AsyncStorage.getItem(RECENT_SEARCHES_KEY);
+      if (stored) {
+        setRecentSearches(JSON.parse(stored));
+      }
+    } catch (err) {
+      console.warn('Erro ao carregar buscas recentes:', err);
+    }
+  };
+
   useEffect(() => {
     loadRecentSearches();
   }, []);
@@ -96,17 +107,6 @@ export default function SearchScreen() {
 
     return () => unsubscribe();
   }, [user?.uid]);
-
-  const loadRecentSearches = async () => {
-    try {
-      const stored = await AsyncStorage.getItem(RECENT_SEARCHES_KEY);
-      if (stored) {
-        setRecentSearches(JSON.parse(stored));
-      }
-    } catch (err) {
-      console.warn('Erro ao carregar buscas recentes:', err);
-    }
-  };
 
   const saveRecentSearch = (searchTerm: string) => {
     const trimmed = searchTerm.trim();
@@ -349,11 +349,11 @@ export default function SearchScreen() {
           activeOpacity={0.8}
         >
           {isAdding ? (
-            <ActivityIndicator size="small" color={theme.bg} />
+            <ActivityIndicator size="small" color="#FFFFFF" />
           ) : isInShelf ? (
             <Ionicons name="checkmark" size={20} color={theme.success} />
           ) : (
-            <Ionicons name="add" size={22} color={theme.bg} />
+            <Ionicons name="add" size={22} color="#FFFFFF" />
           )}
         </TouchableOpacity>
       </View>
@@ -424,7 +424,7 @@ export default function SearchScreen() {
               ) : null}
               <Text
                 className={`text-xs font-semibold ${
-                  !activeCategory ? 'text-bg' : 'text-textSecondary'
+                  !activeCategory ? 'text-white font-bold' : 'text-textSecondary'
                 }`}
               >
                 Todas
@@ -454,12 +454,12 @@ export default function SearchScreen() {
                   <Ionicons
                     name={cat.icon}
                     size={14}
-                    color={isSelected ? theme.bg : theme.accent}
+                    color={isSelected ? '#FFFFFF' : theme.accent}
                     className="mr-1.5 z-10"
                   />
                   <Text
                     className={`text-xs font-semibold z-10 ${
-                      isSelected ? 'text-bg' : 'text-textSecondary'
+                      isSelected ? 'text-white font-bold' : 'text-textSecondary'
                     }`}
                   >
                     {cat.label}
@@ -540,7 +540,7 @@ export default function SearchScreen() {
                         <Ionicons
                           name={cat.icon}
                           size={20}
-                          color={activeCategory === cat.query ? theme.bg : theme.accent}
+                          color={activeCategory === cat.query ? '#FFFFFF' : theme.accent}
                           className="z-10"
                         />
                       </View>
@@ -636,8 +636,8 @@ export default function SearchScreen() {
                 onPress={() => query.trim() ? performSearch(query) : activeCategory && performSearch(activeCategory, true)}
                 activeOpacity={0.85}
               >
-                <Ionicons name="refresh" size={16} color={theme.bg} className="mr-1.5" />
-                <Text className="text-xs font-bold text-bg">
+                <Ionicons name="refresh" size={16} color="#FFFFFF" className="mr-1.5" />
+                <Text className="text-xs font-bold text-white">
                   Tentar Novamente
                 </Text>
               </TouchableOpacity>
@@ -658,8 +658,8 @@ export default function SearchScreen() {
                 onPress={() => setIsCustomBookModalVisible(true)}
                 activeOpacity={0.8}
               >
-                <Ionicons name="add-circle-outline" size={20} color={theme.bg} className="mr-1.5" />
-                <Text className="text-xs font-bold text-bg">
+                <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" className="mr-1.5" />
+                <Text className="text-xs font-bold text-white">
                   Criar Livro Manualmente
                 </Text>
               </TouchableOpacity>
@@ -768,7 +768,7 @@ export default function SearchScreen() {
                 onPress={handleAddCustomBook}
                 activeOpacity={0.8}
               >
-                <Text className="text-xs font-bold text-bg">
+                <Text className="text-xs font-bold text-white">
                   Salvar Livro
                 </Text>
               </TouchableOpacity>

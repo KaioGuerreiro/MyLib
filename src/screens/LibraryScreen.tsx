@@ -28,6 +28,7 @@ import {
   updateBookDetails,
   removeBookFromBookshelf,
 } from '../services/bookshelfService';
+import ReadingSessionModal from '../components/ReadingSessionModal';
 
 type TabFilter = 'TODOS' | 'LENDO' | 'LIDO' | 'NA_FILA';
 
@@ -49,13 +50,16 @@ const COVER_COLORS = [
 
 export default function LibraryScreen() {
   const { theme } = useTheme();
-  const { user } = useAuth();
+  const { user, userData } = useAuth();
   const insets = useSafeAreaInsets();
 
   const [activeFilter, setActiveFilter] = useState<TabFilter>('TODOS');
   const [estante, setEstante] = useState<ItemEstanteCompleto[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  const [sessionModalVisible, setSessionModalVisible] = useState(false);
+  const [selectedBookForSession, setSelectedBookForSession] = useState<ItemEstanteCompleto | null>(null);
 
   const [editingBook, setEditingBook] = useState<ItemEstanteCompleto | null>(null);
   const [customAuthor, setCustomAuthor] = useState<string>('');
@@ -168,6 +172,14 @@ export default function LibraryScreen() {
       return;
     }
 
+    if (parsedPages < (editingBook.progressoPaginas || 0)) {
+      Alert.alert(
+        'Páginas insuficientes',
+        `O total de páginas não pode ser menor que o progresso já lido (${editingBook.progressoPaginas} páginas).`
+      );
+      return;
+    }
+
     setSavingBook(true);
     try {
       await updateBookDetails(user.uid, editingBook.id, {
@@ -205,6 +217,11 @@ export default function LibraryScreen() {
     );
   };
 
+  const handleOpenSession = (item: ItemEstanteCompleto) => {
+    setSelectedBookForSession(item);
+    setSessionModalVisible(true);
+  };
+
   const handleBookOptions = (item: ItemEstanteCompleto) => {
     const allOptions: { label: string; status: StatusLeitura }[] = [
       { label: '📖 Marcar como Lendo', status: 'LENDO' },
@@ -217,6 +234,7 @@ export default function LibraryScreen() {
       item.livro.titulo,
       `Autor: ${item.livro.autor}\nTotal: ${item.livro.totalPaginas || 0} páginas\n\nEscolha uma ação:`,
       [
+        { text: '⏱️ Registrar Sessão de Leitura', onPress: () => handleOpenSession(item) },
         ...statusOptions.map((opt) => ({
           text: opt.label,
           onPress: () => handleStatusChange(item, opt.status),
@@ -362,19 +380,19 @@ export default function LibraryScreen() {
               ) : null}
               <Text
                 className={`text-xs font-semibold ${
-                  isActive ? 'text-bg' : 'text-textMuted'
+                  isActive ? 'text-white font-bold' : 'text-textMuted'
                 }`}
               >
                 {tab.label}
               </Text>
               <View
                 className={`px-1.5 py-0.5 rounded-full min-w-4 items-center justify-center ${
-                  isActive ? 'bg-black/20' : 'bg-cardBorder'
+                  isActive ? 'bg-black/25' : 'bg-cardBorder'
                 }`}
               >
                 <Text
                   className={`text-[10px] font-bold ${
-                    isActive ? 'text-bg' : 'text-textMuted'
+                    isActive ? 'text-white' : 'text-textMuted'
                   }`}
                 >
                   {count}
@@ -527,11 +545,11 @@ export default function LibraryScreen() {
                     activeOpacity={0.85}
                   >
                     {savingBook ? (
-                      <ActivityIndicator size="small" color={theme.bg} />
+                      <ActivityIndicator size="small" color="#FFFFFF" />
                     ) : (
                       <>
-                        <Ionicons name="checkmark" size={18} color={theme.bg} className="mr-1.5" />
-                        <Text className="text-xs font-bold text-bg">
+                        <Ionicons name="checkmark" size={18} color="#FFFFFF" className="mr-1.5" />
+                        <Text className="text-xs font-bold text-white">
                           Salvar
                         </Text>
                       </>
@@ -543,6 +561,17 @@ export default function LibraryScreen() {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+
+      {/* Modal de Registro de Sessão de Leitura */}
+      <ReadingSessionModal
+        visible={sessionModalVisible}
+        book={selectedBookForSession}
+        user={userData}
+        onClose={() => {
+          setSessionModalVisible(false);
+          setSelectedBookForSession(null);
+        }}
+      />
     </View>
   );
 }

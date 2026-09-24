@@ -1,8 +1,7 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
@@ -19,7 +18,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { ThemeSlider } from "../components/ThemeSlider";
 import { InputField } from "../components/InputField";
 import { isValidEmail } from "../utils/validation";
-import { RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { AuthStackParamList } from "../navigation/AuthNavigator";
 import { useTheme } from "../theme/ThemeContext";

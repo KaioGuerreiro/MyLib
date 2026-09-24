@@ -2,40 +2,39 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Função auxiliar para garantir que apenas o usuário autenticado acesse seus próprios dados
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
 
     match /usuarios/{userId} {
+      // Usuário só pode ler seu próprio documento de perfil
       allow get: if isOwner(userId);
       allow list: if false;
-      allow create: if isOwner(userId)
-        && request.resource.data.keys().hasOnly([
-          'id', 'nome', 'email', 'xpTotal', 'nivelAtual', 'ofensivaAtual', 'createdAt'
-        ])
-        && request.resource.data.id == userId
-        && request.resource.data.email == request.auth.token.email
-        && request.resource.data.xpTotal == 0
-        && request.resource.data.nivelAtual == 1
-        && request.resource.data.ofensivaAtual == 0;
-      allow update: if isOwner(userId)
-        && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['nome', 'updatedAt']);
+
+      // Usuário pode criar e atualizar seus próprios dados (XP, nível, ofensiva, última leitura)
+      allow create, update: if isOwner(userId);
       allow delete: if false;
 
+      // Subcoleção de Estante de Livros
       match /estante/{itemId} {
-        allow read: if isOwner(userId);
-        allow create: if isOwner(userId)
-          && request.resource.data.usuarioId == userId
-          && request.resource.data.status in ['LENDO', 'LIDO', 'NA_FILA']
-          && request.resource.data.progressoPaginas is int
-          && request.resource.data.progressoPaginas >= 0;
-        allow update: if isOwner(userId)
-          && request.resource.data.usuarioId == resource.data.usuarioId
-          && request.resource.data.status in ['LENDO', 'LIDO', 'NA_FILA']
-          && request.resource.data.progressoPaginas is int
-          && request.resource.data.progressoPaginas >= 0;
-        allow delete: if isOwner(userId);
+        allow read, write: if isOwner(userId);
+      }
+
+      // Subcoleção de Sessões de Leitura (Histórico)
+      match /sessoes/{sessaoId} {
+        allow read, create: if isOwner(userId);
+        allow update, delete: if false;
+      }
+
+      // Subcoleção de Conquistas (Módulo 4)
+      match /conquistas/{conquistaId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Subcoleção de Metas de Leitura (Módulo 4)
+      match /metas/{metaId} {
+        allow read, write: if isOwner(userId);
       }
     }
   }

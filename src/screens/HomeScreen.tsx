@@ -22,8 +22,10 @@ import {
   ItemEstanteCompleto,
   subscribeToUserBookshelf,
 } from '../services/bookshelfService';
-import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import ReadingSessionModal from '../components/ReadingSessionModal';
+import { calcularProgressoNivel } from '../utils/gamification';
+import { sincronizarOfensivaUsuario } from '../services/readingSessionService';
 
 const COVER_COLORS = [
   '#2C2B4E',
@@ -34,22 +36,37 @@ const COVER_COLORS = [
   '#243340',
 ];
 
-export default function HomeScreen() {
+export interface HomeScreenProps {
+  navigation?: BottomTabNavigationProp<any>;
+}
+
+export default function HomeScreen({ navigation }: HomeScreenProps = {}) {
   const { isDark, theme, toggleTheme, toggleAnim } = useTheme();
   const { user, userData, signOut, refreshUserProfile } = useAuth();
   const insets = useSafeAreaInsets();
-
-  const navigation = useNavigation<BottomTabNavigationProp<any>>();
   const [sendingVerification, setSendingVerification] = useState(false);
   const [estante, setEstante] = useState<ItemEstanteCompleto[]>([]);
   const [loadingBooks, setLoadingBooks] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [sessionModalVisible, setSessionModalVisible] = useState(false);
+  const [selectedBookForSession, setSelectedBookForSession] = useState<ItemEstanteCompleto | null>(null);
 
   const fullName = userData?.nome || user?.displayName || user?.email?.split('@')[0] || 'Leitor';
   const firstName = fullName.trim().split(' ')[0];
   const ofensivaDias = userData?.ofensivaAtual ?? 0;
   const nivelAtual = userData?.nivelAtual ?? 1;
   const xpTotal = userData?.xpTotal ?? 0;
+
+  const progressoNivel = useMemo(() => {
+    return calcularProgressoNivel(xpTotal);
+  }, [xpTotal]);
+
+  // Sincroniza e corrige a ofensiva caso tenha expirado por inatividade
+  useEffect(() => {
+    if (userData?.id) {
+      sincronizarOfensivaUsuario(userData);
+    }
+  }, [userData]);
 
   useEffect(() => {
     if (!user?.uid) {
@@ -143,11 +160,13 @@ export default function HomeScreen() {
 
   const handleContinueReading = () => {
     if (!currentReading) return;
-    Alert.alert(
-      'Sessão de Leitura',
-      `O registro de progresso para "${currentReading.livro.titulo}" será implementado no módulo de sessões.`,
-      [{ text: 'OK' }]
-    );
+    setSelectedBookForSession(currentReading);
+    setSessionModalVisible(true);
+  };
+
+  const handleOpenBookSession = (item: ItemEstanteCompleto) => {
+    setSelectedBookForSession(item);
+    setSessionModalVisible(true);
   };
 
   const getStatusBadgeStyle = (status: string) => {
@@ -263,7 +282,7 @@ export default function HomeScreen() {
         </View>
 
         {/* 3. Cards de Gamificação / Status (Grid 2 Colunas) */}
-        <View className="flex-row gap-3.5 mb-5">
+        <View className="flex-row gap-3.5 mb-3">
           {/* Card Ofensiva */}
           <View className="flex-1 flex-row items-center p-3.5 rounded-2xl border border-cardBorder bg-card shadow-sm elevation-2">
             <View className="w-11 h-11 rounded-xl items-center justify-center mr-3 bg-streak/25">
@@ -288,10 +307,31 @@ export default function HomeScreen() {
               <Text className="text-base font-extrabold text-accent">
                 Nível {nivelAtual}
               </Text>
-              <Text className="text-xs font-semibold text-accentText">
-                {xpTotal} XP
+              <Text className="text-xs font-semibold text-accentText" numberOfLines={1}>
+                {progressoNivel.tituloNivel}
               </Text>
             </View>
+          </View>
+        </View>
+
+        {/* Barra de Progresso do Nível Atual */}
+        <View className="p-3.5 rounded-2xl border border-cardBorder bg-card mb-5 shadow-sm elevation-1">
+          <View className="flex-row justify-between items-center mb-2">
+            <View className="flex-row items-center">
+              <Ionicons name="flash-outline" size={14} color={theme.accent} className="mr-1.5" />
+              <Text className="text-xs font-bold text-textPrimary">
+                Rumo ao Nível {nivelAtual + 1}
+              </Text>
+            </View>
+            <Text className="text-xs font-semibold text-accentText">
+              {progressoNivel.xpAtualNoNivel} / {progressoNivel.xpParaProximoNivel} XP ({progressoNivel.percentual}%)
+            </Text>
+          </View>
+          <View className="h-2 rounded-full overflow-hidden bg-cardBorder">
+            <View
+              className="h-full rounded-full bg-accent"
+              style={{ width: `${progressoNivel.percentual}%` }}
+            />
           </View>
         </View>
 
@@ -305,68 +345,143 @@ export default function HomeScreen() {
           </View>
         ) : readingStats ? (
           <LinearGradient
-            colors={[theme.card, theme.bg]}
+            colors={isDark ? ['#242636', '#1E202E'] : ['#FFFFFF', '#F8F9FD']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            className="p-5 rounded-3xl border border-cardBorder mb-6 relative overflow-hidden shadow-md elevation-3"
+            style={{
+              padding: 20,
+              borderRadius: 24,
+              borderWidth: 1,
+              borderColor: isDark ? 'rgba(145, 132, 217, 0.22)' : 'rgba(108, 92, 231, 0.16)',
+              marginBottom: 24,
+              shadowColor: isDark ? '#000000' : '#4C3ACB',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: isDark ? 0.35 : 0.08,
+              shadowRadius: 12,
+              elevation: 3,
+            }}
           >
-            <View className="self-start px-2.5 py-1 rounded-full border border-accent/40 bg-accent/20 mb-3">
-              <Text className="text-[10px] font-extrabold tracking-wider text-accent">
-                LENDO AGORA
+            {/* Header do Card: Badge + Percentual */}
+            <View className="flex-row items-center justify-between mb-4">
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingHorizontal: 10,
+                  paddingVertical: 4,
+                  borderRadius: 9999,
+                  backgroundColor: isDark ? 'rgba(145, 132, 217, 0.20)' : 'rgba(108, 92, 231, 0.10)',
+                  borderWidth: 1,
+                  borderColor: isDark ? 'rgba(145, 132, 217, 0.40)' : 'rgba(108, 92, 231, 0.25)',
+                  gap: 5,
+                }}
+              >
+                <Ionicons name="book" size={11} color={isDark ? theme.accentText : theme.accent} />
+                <Text
+                  style={{
+                    color: isDark ? theme.accentText : theme.accent,
+                    fontSize: 10,
+                    fontWeight: '800',
+                    letterSpacing: 0.6,
+                  }}
+                >
+                  LENDO AGORA
+                </Text>
+              </View>
+
+              <Text className="text-xs font-bold text-textPrimary">
+                {readingStats.percent}% Concluído
               </Text>
             </View>
 
-            <View className="flex-row items-center mb-4">
-              <View className="w-[64px] h-[92px] rounded-xl overflow-hidden items-center justify-center mr-4 border border-cardBorder bg-surface shadow-sm elevation-2 relative">
+            {/* Informações Principais: Capa + Título + Autor + Páginas */}
+            <View className="flex-row items-center mb-4" style={{ gap: 14 }}>
+              <View
+                style={{
+                  width: 68,
+                  height: 98,
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                  backgroundColor: isDark ? '#1C1D2A' : '#EDE8FF',
+                  borderWidth: 1,
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.10)' : 'rgba(0, 0, 0, 0.06)',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 4,
+                  elevation: 2,
+                }}
+              >
                 {readingStats.urlCapa ? (
                   <Image
                     source={{ uri: readingStats.urlCapa }}
-                    style={StyleSheet.absoluteFillObject}
+                    style={{ width: '100%', height: '100%' }}
                     resizeMode="cover"
                   />
                 ) : (
-                  <Ionicons name="book" size={26} color={theme.accentText} />
+                  <View className="flex-1 items-center justify-center">
+                    <Ionicons name="book" size={28} color={theme.accentText} />
+                  </View>
                 )}
               </View>
-              <View className="flex-1">
+
+              <View className="flex-1 justify-center">
                 <Text
                   className="text-base font-bold leading-5 mb-1 text-textPrimary"
                   numberOfLines={2}
                 >
                   {readingStats.titulo}
                 </Text>
-                <Text className="text-xs font-medium text-textSecondary" numberOfLines={1}>
-                  {readingStats.autor}
+                <Text className="text-xs font-medium text-textSecondary mb-2" numberOfLines={1}>
+                  {readingStats.autor || 'Autor desconhecido'}
                 </Text>
-              </View>
-            </View>
 
-            <View className="flex-row justify-between items-center mb-2">
-              <Text className="text-xs font-bold text-textPrimary">
-                {readingStats.percent}% Concluído
-              </Text>
-              <Text className="text-xs font-medium text-textSecondary">
-                {readingStats.paginasLidas}/{readingStats.totalPaginas} pág.
-              </Text>
+                <View className="flex-row items-center" style={{ gap: 4 }}>
+                  <Ionicons name="bookmark-outline" size={13} color={theme.textMuted} />
+                  <Text className="text-xs font-medium text-textSecondary">
+                    {readingStats.paginasLidas} de {readingStats.totalPaginas} pág.
+                  </Text>
+                </View>
+              </View>
             </View>
 
             {/* Barra de Progresso */}
             <View className="h-2 rounded-full overflow-hidden mb-4 bg-cardBorder">
-              <View
-                className="h-full rounded-full bg-streak"
-                style={{ width: `${readingStats.percent}%` }}
+              <LinearGradient
+                colors={['#9184D9', '#7A68C9']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{
+                  height: '100%',
+                  borderRadius: 4,
+                  width: `${Math.max(readingStats.percent, 3)}%`,
+                }}
               />
             </View>
 
+            {/* Botão de Ação */}
             <TouchableOpacity
-              className="h-12 rounded-2xl flex-row items-center justify-center shadow-md bg-primary elevation-3"
+              style={{
+                height: 48,
+                borderRadius: 14,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: theme.accent,
+                shadowColor: theme.accent,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.35,
+                shadowRadius: 8,
+                elevation: 3,
+                gap: 8,
+              }}
               onPress={handleContinueReading}
               activeOpacity={0.85}
               accessibilityLabel="Continuar leitura"
               id="btn-continue-reading"
             >
-              <Ionicons name="book-outline" size={18} color={theme.bg} className="mr-2" />
-              <Text className="text-sm font-bold tracking-wide text-bg">
+              <Ionicons name="book-outline" size={18} color="#FFFFFF" />
+              <Text style={{ fontSize: 14, fontWeight: '700', color: '#FFFFFF', letterSpacing: 0.2 }}>
                 Continuar Leitura
               </Text>
             </TouchableOpacity>
@@ -393,13 +508,13 @@ export default function HomeScreen() {
 
               <TouchableOpacity
                 className="px-5 py-2.5 rounded-xl flex-row items-center bg-primary"
-                onPress={() => navigation.navigate('Busca')}
+                onPress={() => navigation?.navigate('Busca')}
                 activeOpacity={0.85}
                 accessibilityLabel="Buscar livros"
                 id="btn-explore-books"
               >
-                <Ionicons name="search" size={16} color={theme.bg} className="mr-1.5" />
-                <Text className="text-xs font-bold text-bg">
+                <Ionicons name="search" size={16} color="#FFFFFF" className="mr-1.5" />
+                <Text className="text-xs font-bold text-white">
                   Buscar Livros
                 </Text>
               </TouchableOpacity>
@@ -415,7 +530,7 @@ export default function HomeScreen() {
           {estante.length > 0 && (
             <TouchableOpacity
               activeOpacity={0.7}
-              onPress={() => navigation.navigate('Biblioteca')}
+              onPress={() => navigation?.navigate('Biblioteca')}
               accessibilityLabel="Ver todos os livros da estante"
               id="btn-see-all-shelf"
             >
@@ -446,13 +561,13 @@ export default function HomeScreen() {
             </Text>
             <TouchableOpacity
               className="px-4 py-2.5 rounded-xl flex-row items-center bg-primary"
-              onPress={() => navigation.navigate('Busca')}
+              onPress={() => navigation?.navigate('Busca')}
               activeOpacity={0.85}
               accessibilityLabel="Adicionar primeiro livro"
               id="btn-add-first-book"
             >
-              <Ionicons name="add" size={18} color={theme.bg} className="mr-1" />
-              <Text className="text-xs font-bold text-bg">
+              <Ionicons name="add" size={18} color="#FFFFFF" className="mr-1" />
+              <Text className="text-xs font-bold text-white">
                 Adicionar Livro
               </Text>
             </TouchableOpacity>
@@ -473,6 +588,7 @@ export default function HomeScreen() {
                   key={item.id || item.livroId || index}
                   className="w-28"
                   activeOpacity={0.8}
+                  onPress={() => handleOpenBookSession(item)}
                 >
                   <View
                     className="w-28 h-40 rounded-2xl overflow-hidden mb-2 relative border border-cardBorder shadow-sm elevation-2"
@@ -481,7 +597,7 @@ export default function HomeScreen() {
                     {item.livro.urlCapa ? (
                       <Image
                         source={{ uri: item.livro.urlCapa }}
-                        style={StyleSheet.absoluteFillObject}
+                        style={StyleSheet.absoluteFill}
                         resizeMode="cover"
                       />
                     ) : (
@@ -519,6 +635,17 @@ export default function HomeScreen() {
           </ScrollView>
         )}
       </ScrollView>
+
+      {/* Modal de Registro de Sessão de Leitura */}
+      <ReadingSessionModal
+        visible={sessionModalVisible}
+        book={selectedBookForSession}
+        user={userData}
+        onClose={() => {
+          setSessionModalVisible(false);
+          setSelectedBookForSession(null);
+        }}
+      />
     </View>
   );
 }
