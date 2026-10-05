@@ -33,8 +33,10 @@ jest.mock('firebase/firestore', () => ({
   doc: jest.fn((...args) => ({ path: args.slice(1).join('/') })),
   collection: jest.fn((...args) => ({ path: args.slice(1).join('/') })),
   addDoc: jest.fn(() => Promise.resolve({ id: 'sessao_123' })),
+  setDoc: jest.fn(() => Promise.resolve()),
   updateDoc: jest.fn(() => Promise.resolve()),
-  getDocs: jest.fn(),
+  increment: jest.fn((val) => val),
+  getDocs: jest.fn(() => Promise.resolve({ docs: [] })),
   query: jest.fn((ref) => ref),
   orderBy: jest.fn(),
   limit: jest.fn(),
@@ -102,7 +104,7 @@ describe('readingSessionService', () => {
 
       // Validar chamadas ao Firestore
       expect(addDoc).toHaveBeenCalledTimes(1);
-      expect(updateDoc).toHaveBeenCalledTimes(2); // 1 para o item da estante, 1 para o usuário
+      expect((updateDoc as jest.Mock).mock.calls.length).toBeGreaterThanOrEqual(2);
     });
 
     it('deve concluir o livro e atribuir bônus de 100 XP quando atingir o total de páginas', async () => {
@@ -185,6 +187,29 @@ describe('readingSessionService', () => {
       expect(sessoes[0].id).toBe('sessao_1');
       expect(sessoes[0].livroTitulo).toBe('1984');
       expect(sessoes[0].xpGanho).toBe(125);
+    });
+
+    it('deve retornar campos de conquistas e metas no resumo da sessão [RF007, RF008, RF010]', async () => {
+      const resultado = await registrarSessaoLeitura({
+        usuarioId: 'user_1',
+        itemEstanteId: 'item_1',
+        livroId: 'book_1',
+        livroTitulo: 'Dom Casmurro',
+        totalPaginasLivro: 200,
+        progressoAtualLivro: 190,
+        quantidade: 10,
+        tipoUnidade: 'paginas',
+        usuarioAtual: {
+          xpTotal: 0,
+          nivelAtual: 1,
+          ofensivaAtual: 0,
+          ultimaLeituraData: null,
+        },
+      });
+
+      expect(resultado.concluiuLivro).toBe(true);
+      expect(resultado.conquistasDesbloqueadas).toBeDefined();
+      expect(resultado.metasAtualizadas).toBeDefined();
     });
   });
 

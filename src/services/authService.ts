@@ -139,6 +139,7 @@ export async function fetchUserProfile(uid: string): Promise<Usuario | null> {
         xpTotal: data.xpTotal || 0,
         nivelAtual: data.nivelAtual || 1,
         ofensivaAtual: data.ofensivaAtual || 0,
+        ...(data.ultimaLeituraData !== undefined ? { ultimaLeituraData: data.ultimaLeituraData } : {}),
       };
     }
   } catch (err: any) {
@@ -168,6 +169,7 @@ export function subscribeToUserProfile(
           xpTotal: data.xpTotal !== undefined ? data.xpTotal : 0,
           nivelAtual: data.nivelAtual !== undefined ? data.nivelAtual : 1,
           ofensivaAtual: data.ofensivaAtual !== undefined ? data.ofensivaAtual : 0,
+          ...(data.ultimaLeituraData !== undefined ? { ultimaLeituraData: data.ultimaLeituraData } : {}),
         });
       }
     },

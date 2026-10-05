@@ -21,6 +21,7 @@ import { ThemeType } from '../theme/colors';
 import HomeScreen from '../screens/HomeScreen';
 import SearchScreen from '../screens/SearchScreen';
 import LibraryScreen from '../screens/LibraryScreen';
+import AchievementsScreen from '../screens/AchievementsScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -302,6 +303,7 @@ export function TabNavigator() {
       <Tab.Screen name="Início" component={HomeScreen} />
       <Tab.Screen name="Busca" component={SearchScreen} />
       <Tab.Screen name="Biblioteca" component={LibraryScreen} />
+      <Tab.Screen name="Conquistas" component={AchievementsScreen} />
     </Tab.Navigator>
   );
 }

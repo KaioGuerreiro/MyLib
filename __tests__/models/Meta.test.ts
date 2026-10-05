@@ -56,4 +56,21 @@ describe('Modelo Meta', () => {
 
     expect(semId.id).toBeUndefined();
   });
+
+  it('deve suportar campos opcionais dataCriacao e periodo', () => {
+    const data = new Date('2026-10-01');
+    const meta: Meta = {
+      id: 'meta_1',
+      usuarioId: 'user_1',
+      tipoMeta: 'livros_mes',
+      valorAlvo: 5,
+      progressoAtual: 2,
+      atingida: false,
+      dataCriacao: data,
+      periodo: '2026-10',
+    };
+
+    expect(meta.dataCriacao).toBe(data);
+    expect(meta.periodo).toBe('2026-10');
+  });
 });

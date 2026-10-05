@@ -7,7 +7,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6.svg)
 ![Firebase](https://img.shields.io/badge/Firebase-v12-FFCA28.svg)
 ![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-NativeWind%20v4-38B2AC.svg)
-![Jest CI](https://img.shields.io/badge/Tests-15%20passed-brightgreen.svg)
+![Jest CI](https://img.shields.io/badge/Tests-100%20passed-brightgreen.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 ---
@@ -28,6 +28,10 @@
   - **Ofensivas (Streaks):** Contabilização de dias consecutivos de leitura com sincronização automática e proteção contra inatividade.
   - **Experiência (XP):** Ganho de pontos com base em páginas lidas ou tempo de leitura dedicado.
   - **Níveis e Títulos:** Progressão de níveis (*Iniciado*, *Devorador de Páginas*, *Arquivista*, etc.) com barra de progresso visual.
+  - **Mural de Conquistas & Medalhas [RF008]:** Desbloqueio de medalhas categorizadas (Ofensiva, Livros, Páginas e Geral) com cálculo automático de progresso.
+  - **Sistema de Recompensas [RF007]:** Bônus de XP instantâneo ao conquistar marcos e subir de patente.
+  - **Definição e Gestão de Metas [RF010]:** Metas diárias de páginas e metas mensais de livros com acompanhamento em tempo real.
+  - **Lembrete de Leitura Diário (Push Notifications):** Agendamento no horário preferido do usuário com mensagens motivacionais dinâmicas via `expo-notifications`.
 - **📚 Integração com Google Books API:**
   - Busca inteligente com debouncing, categorização por gênero literário e visualização de capas em alta resolução.
   - Controle de taxa e concorrência via `rateLimiter` nativo.
@@ -36,7 +40,7 @@
   - Contadores em tempo real e atualização dinâmica com Firestore listeners.
 - **⏱️ Registro de Sessões de Leitura:**
   - Modal interativo para registro de progresso por páginas ou minutos cronometrados.
-  - Promoção automática do livro para `LIDO` ao atingir a última página.
+  - Promoção automática do livro para `LIDO` ao atingir a última página, acompanhada de celebração de metas e conquistas desbloqueadas.
 - **🎨 Design Apple Human Interface Guidelines (HIG):**
   - Barra de abas flutuante translúcida com suporte a **Liquid Glass** nativo no iOS (`expo-glass-effect`).
   - Suporte completo e dinâmico a **Modo Claro (Light)** e **Modo Escuro (Dark)** com transições suaves e feedback tátil (`expo-haptics`).

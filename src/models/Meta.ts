@@ -7,4 +7,6 @@ export interface Meta {
   valorAlvo: number;
   progressoAtual: number;
   atingida: boolean;
+  dataCriacao?: Date;
+  periodo?: string;
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -26,6 +27,7 @@ import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import ReadingSessionModal from '../components/ReadingSessionModal';
 import { calcularProgressoNivel } from '../utils/gamification';
 import { sincronizarOfensivaUsuario } from '../services/readingSessionService';
+import { fetchUserGoals, MetasUsuario } from '../services/goalService';
 
 const COVER_COLORS = [
   '#2C2B4E',
@@ -91,6 +93,25 @@ export default function HomeScreen({ navigation }: HomeScreenProps = {}) {
     return () => unsubscribe();
   }, [user?.uid]);
 
+  const [metas, setMetas] = useState<MetasUsuario>({});
+
+  const carregarMetas = useCallback(async () => {
+    if (user?.uid) {
+      try {
+        const metasRes = await fetchUserGoals(user.uid);
+        setMetas(metasRes);
+      } catch {
+        // Ignorar erro silenciosamente
+      }
+    }
+  }, [user]);
+
+  useFocusEffect(
+    useCallback(() => {
+      carregarMetas();
+    }, [carregarMetas])
+  );
+
   const currentReading = useMemo(() => {
     return estante.find((item) => item.status === 'LENDO') || null;
   }, [estante]);
@@ -123,6 +144,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps = {}) {
     setRefreshing(true);
     try {
       await refreshUserProfile();
+      if (user?.uid) {
+        const metasRes = await fetchUserGoals(user.uid);
+        setMetas(metasRes);
+      }
     } catch {
       // Ignorar erro silenciosamente
     } finally {
@@ -522,6 +547,92 @@ export default function HomeScreen({ navigation }: HomeScreenProps = {}) {
           </View>
         )}
 
+        {/* Seção: Metas de Leitura [RF010] */}
+        <View className="mb-6">
+          <View className="flex-row justify-between items-center mb-3">
+            <View className="flex-row items-center gap-1.5">
+              <Ionicons name="flag-outline" size={17} color={theme.accent} />
+              <Text className="text-lg font-bold text-textPrimary">
+                Metas de Leitura
+              </Text>
+            </View>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => navigation?.navigate('Conquistas')}
+            >
+              <Text className="text-xs font-bold text-accentText">
+                Ver Conquistas &gt;
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View className="flex-row gap-3">
+            {/* Meta Diária */}
+            <TouchableOpacity
+              className="flex-1 p-3.5 rounded-2xl border border-cardBorder bg-card"
+              activeOpacity={0.8}
+              onPress={() => navigation?.navigate('Conquistas')}
+            >
+              <View className="flex-row items-center justify-between mb-2">
+                <View className="w-7 h-7 rounded-lg bg-streak/20 items-center justify-center">
+                  <Ionicons name="flash" size={14} color={theme.streak} />
+                </View>
+                {metas.metaDiaria?.atingida ? (
+                  <View className="px-2 py-0.5 rounded-full bg-success/20">
+                    <Text className="text-[10px] font-bold text-success">Feito!</Text>
+                  </View>
+                ) : (
+                  <Text className="text-[11px] font-bold text-accent">
+                    {metas.metaDiaria
+                      ? `${Math.min(100, Math.round((metas.metaDiaria.progressoAtual / metas.metaDiaria.valorAlvo) * 100))}%`
+                      : '0%'}
+                  </Text>
+                )}
+              </View>
+              <Text className="text-xs font-semibold text-textSecondary">
+                Meta Diária
+              </Text>
+              <Text className="text-sm font-bold text-textPrimary mt-0.5">
+                {metas.metaDiaria
+                  ? `${metas.metaDiaria.progressoAtual}/${metas.metaDiaria.valorAlvo} pág`
+                  : 'Configurar'}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Meta Mensal */}
+            <TouchableOpacity
+              className="flex-1 p-3.5 rounded-2xl border border-cardBorder bg-card"
+              activeOpacity={0.8}
+              onPress={() => navigation?.navigate('Conquistas')}
+            >
+              <View className="flex-row items-center justify-between mb-2">
+                <View className="w-7 h-7 rounded-lg bg-success/20 items-center justify-center">
+                  <Ionicons name="book" size={14} color={theme.success} />
+                </View>
+                {metas.metaMensal?.atingida ? (
+                  <View className="px-2 py-0.5 rounded-full bg-success/20">
+                    <Text className="text-[10px] font-bold text-success">Feito!</Text>
+                  </View>
+                ) : (
+                  <Text className="text-[11px] font-bold text-accent">
+                    {metas.metaMensal
+                      ? `${Math.min(100, Math.round((metas.metaMensal.progressoAtual / metas.metaMensal.valorAlvo) * 100))}%`
+                      : '0%'}
+                  </Text>
+                )}
+              </View>
+              <Text className="text-xs font-semibold text-textSecondary">
+                Meta do Mês
+              </Text>
+              <Text className="text-sm font-bold text-textPrimary mt-0.5">
+                {metas.metaMensal
+                  ? `${metas.metaMensal.progressoAtual}/${metas.metaMensal.valorAlvo} livros`
+                  : 'Configurar'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* 5. Seção "Sua Estante" */}
         <View className="flex-row justify-between items-center mb-3.5">
           <Text className="text-lg font-bold text-textPrimary">
@@ -644,6 +755,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps = {}) {
         onClose={() => {
           setSessionModalVisible(false);
           setSelectedBookForSession(null);
+        }}
+        onSessionComplete={() => {
+          refreshUserProfile().catch(() => {});
+          if (user?.uid) {
+            fetchUserGoals(user.uid).then(setMetas).catch(() => {});
+          }
         }}
       />
     </View>

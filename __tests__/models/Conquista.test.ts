@@ -1,4 +1,4 @@
-import { Conquista } from '../../src/models/Conquista';
+import { Conquista, CategoriaConquista } from '../../src/models/Conquista';
 
 describe('Modelo Conquista', () => {
   it('deve criar uma Conquista válida', () => {
@@ -34,5 +34,30 @@ describe('Modelo Conquista', () => {
     };
 
     expect(comId.id).toBe('conquista_99');
+  });
+
+  it('deve suportar ícone, categoria, recompensa em XP e status de desbloqueio', () => {
+    const categorias: CategoriaConquista[] = ['streak', 'livros', 'paginas', 'geral'];
+
+    categorias.forEach((categoria) => {
+      const conquista: Conquista = {
+        id: `conquista_${categoria}`,
+        usuarioId: 'user_1',
+        nome: `Mestre em ${categoria}`,
+        descricao: `Conquistou marco da categoria ${categoria}`,
+        dataConquista: new Date(),
+        icone: 'trophy',
+        categoria,
+        recompensaXp: 150,
+        desbloqueada: true,
+        progressoAtual: 5,
+        progressoAlvo: 5,
+      };
+
+      expect(conquista.categoria).toBe(categoria);
+      expect(conquista.icone).toBe('trophy');
+      expect(conquista.recompensaXp).toBe(150);
+      expect(conquista.desbloqueada).toBe(true);
+    });
   });
 });

@@ -22,6 +22,11 @@ import {
   DetalhesXpGanho,
 } from '../utils/gamification';
 
+import { Conquista } from '../models/Conquista';
+import { Meta } from '../models/Meta';
+import { checkAndUnlockAchievements } from './achievementService';
+import { atualizarProgressoMetasSessao } from './goalService';
+
 export interface RegistrarSessaoParams {
   usuarioId: string;
   itemEstanteId: string;
@@ -54,6 +59,11 @@ export interface ResumoSessaoRegistrada {
   streakResetado: boolean;
   concluiuLivro: boolean;
   novoProgressoPaginas: number;
+  conquistasDesbloqueadas?: Conquista[];
+  xpBonusConquistas?: number;
+  novoXpTotalComRecompensas?: number;
+  metaAtingidaAgora?: boolean;
+  metasAtualizadas?: Meta[];
 }
 
 /**
@@ -118,7 +128,6 @@ export async function registrarSessaoLeitura(
   const nivelAnterior = usuarioAtual.nivelAtual || 1;
   const novoXpTotal = Math.max(0, usuarioAtual.xpTotal || 0) + detalhesXp.xpTotal;
   const novoNivel = calcularNivel(novoXpTotal);
-  const subiuDeNivel = novoNivel > nivelAnterior;
 
   // 5. Salvar sessão na subcoleção do usuário no Firestore
   const sessoesRef = collection(db, 'usuarios', usuarioId, 'sessoes');
@@ -162,6 +171,68 @@ export async function registrarSessaoLeitura(
     updatedAt: serverTimestamp(),
   });
 
+  // 8. [RF010] Atualizar Metas do Usuário
+  let metasAtualizadas: Meta[] = [];
+  let metaAtingidaAgora = false;
+  try {
+    const resMetas = await atualizarProgressoMetasSessao(
+      usuarioId,
+      paginasAvancadas,
+      concluiuLivro
+    );
+    metasAtualizadas = resMetas.metasAtualizadas;
+    metaAtingidaAgora = resMetas.metaAtingidaAgora;
+  } catch (errMetas) {
+    console.warn('Erro ao atualizar metas após sessão:', errMetas);
+  }
+
+  // 9. [RF007, RF008] Verificar e Conceder Conquistas Automáticas
+  let conquistasDesbloqueadas: Conquista[] = [];
+  let xpBonusConquistas = 0;
+  let finalXpTotal = novoXpTotal;
+  try {
+    const estanteSnap = await getDocs(collection(db, 'usuarios', usuarioId, 'estante'));
+    let livrosLidosTotal = 0;
+    let paginasLidasTotal = 0;
+    if (estanteSnap && estanteSnap.docs) {
+      estanteSnap.docs.forEach((d) => {
+        const data = d.data();
+        const isCurrent = d.id === itemEstanteId;
+        const status = isCurrent ? (concluiuLivro ? 'LIDO' : 'LENDO') : data.status;
+        const progresso = isCurrent ? novoProgressoPaginas : (Number(data.progressoPaginas) || 0);
+
+        if (status === 'LIDO') {
+          livrosLidosTotal++;
+        }
+        paginasLidasTotal += progresso;
+      });
+    }
+
+    const metasAtingidasTotal =
+      metasAtualizadas.filter((m) => m.atingida).length > 0 || metaAtingidaAgora ? 1 : 0;
+
+    const resConquistas = await checkAndUnlockAchievements(
+      usuarioId,
+      {
+        streakAtual: resultadoOfensiva.novaOfensiva,
+        livrosLidosTotal,
+        paginasLidasTotal,
+        nivelAtual: novoNivel,
+        metasAtingidasTotal,
+      },
+      undefined,
+      novoXpTotal
+    );
+
+    conquistasDesbloqueadas = resConquistas.novasConquistas;
+    xpBonusConquistas = resConquistas.xpRecompensaTotal;
+    if (xpBonusConquistas > 0) {
+      finalXpTotal += xpBonusConquistas;
+    }
+  } catch (errConquistas) {
+    console.warn('Erro ao avaliar conquistas após sessão:', errConquistas);
+  }
+
   return {
     sessaoId: sessaoDoc.id,
     xpGanho: detalhesXp.xpTotal,
@@ -169,13 +240,18 @@ export async function registrarSessaoLeitura(
     novoXpTotal,
     nivelAnterior,
     novoNivel,
-    subiuDeNivel,
+    subiuDeNivel: novoNivel > nivelAnterior,
     ofensivaAnterior: usuarioAtual.ofensivaAtual,
     novaOfensiva: resultadoOfensiva.novaOfensiva,
     streakIncrementado: resultadoOfensiva.streakIncrementado,
     streakResetado: resultadoOfensiva.streakResetado,
     concluiuLivro,
     novoProgressoPaginas,
+    conquistasDesbloqueadas,
+    xpBonusConquistas,
+    novoXpTotalComRecompensas: finalXpTotal,
+    metaAtingidaAgora,
+    metasAtualizadas,
   };
 }
 

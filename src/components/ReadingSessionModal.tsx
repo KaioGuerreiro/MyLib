@@ -12,6 +12,7 @@ import {
   ScrollView,
   StyleSheet,
   KeyboardAvoidingView,
+  AppState,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -57,6 +58,8 @@ export default function ReadingSessionModal({
   const [resumoSuccess, setResumoSuccess] = useState<ResumoSessaoRegistrada | null>(null);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerStartTimeRef = useRef<number | null>(null);
+  const accumulatedSecondsRef = useRef<number>(0);
 
   // Reset de estado quando o modal abre ou fecha
   useEffect(() => {
@@ -66,6 +69,8 @@ export default function ReadingSessionModal({
       setInputValue('');
       setTimerSeconds(0);
       setIsTimerRunning(false);
+      accumulatedSecondsRef.current = 0;
+      timerStartTimeRef.current = null;
       setTimerPagesRead('');
       setSaving(false);
       setErrorMsg(null);
@@ -75,24 +80,51 @@ export default function ReadingSessionModal({
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
+      timerStartTimeRef.current = null;
     }
   }, [visible, book]);
 
-  // Controle do Cronômetro
+  // Controle do Cronômetro com precisão real mesmo em background/sleep
   useEffect(() => {
     if (isTimerRunning) {
+      timerStartTimeRef.current = Date.now();
       timerRef.current = setInterval(() => {
-        setTimerSeconds((prev) => prev + 1);
+        if (timerStartTimeRef.current) {
+          const elapsed = Math.floor((Date.now() - timerStartTimeRef.current) / 1000);
+          setTimerSeconds(accumulatedSecondsRef.current + elapsed);
+        }
       }, 1000);
-    } else if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      if (timerStartTimeRef.current) {
+        const elapsed = Math.floor((Date.now() - timerStartTimeRef.current) / 1000);
+        accumulatedSecondsRef.current += elapsed;
+        timerStartTimeRef.current = null;
+        setTimerSeconds(accumulatedSecondsRef.current);
+      }
     }
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
+    };
+  }, [isTimerRunning]);
+
+  // Sincroniza o cronômetro ao voltar do background
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active' && isTimerRunning && timerStartTimeRef.current) {
+        const elapsed = Math.floor((Date.now() - timerStartTimeRef.current) / 1000);
+        setTimerSeconds(accumulatedSecondsRef.current + elapsed);
+      }
+    });
+
+    return () => {
+      subscription.remove();
     };
   }, [isTimerRunning]);
 
@@ -170,6 +202,8 @@ export default function ReadingSessionModal({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     setIsTimerRunning(false);
+    accumulatedSecondsRef.current = 0;
+    timerStartTimeRef.current = null;
     setTimerSeconds(0);
   };
 
@@ -404,9 +438,92 @@ export default function ReadingSessionModal({
                       </View>
                     </View>
 
+                    {/* Destaque de Conquistas Desbloqueadas [RF008] */}
+                    {resumoSuccess.conquistasDesbloqueadas && resumoSuccess.conquistasDesbloqueadas.length > 0 && (
+                      <View
+                        style={{
+                          backgroundColor: 'rgba(255, 215, 0, 0.15)',
+                          borderColor: '#FFD700',
+                          borderWidth: 1.5,
+                          borderRadius: 16,
+                          padding: 12,
+                          marginBottom: 16,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 12,
+                        }}
+                      >
+                        <View
+                          style={{
+                            width: 44,
+                            height: 44,
+                            borderRadius: 22,
+                            backgroundColor: '#FFD700',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <Ionicons name="trophy" size={24} color="#FFFFFF" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ color: '#D4AF37', fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>
+                            CONQUISTA DESBLOQUEADA!
+                          </Text>
+                          <Text style={{ color: theme.text, fontSize: 14, fontWeight: '700' }}>
+                            {resumoSuccess.conquistasDesbloqueadas[0].nome}
+                          </Text>
+                          {resumoSuccess.xpBonusConquistas ? (
+                            <Text style={{ color: '#D4AF37', fontSize: 12, fontWeight: '700', marginTop: 2 }}>
+                              +{resumoSuccess.xpBonusConquistas} XP Bônus de Recompensa
+                            </Text>
+                          ) : null}
+                        </View>
+                      </View>
+                    )}
+
+                    {/* Destaque de Meta Cumprida [RF010] */}
+                    {resumoSuccess.metaAtingidaAgora && (
+                      <View
+                        style={{
+                          backgroundColor: 'rgba(0, 196, 140, 0.15)',
+                          borderColor: '#00C48C',
+                          borderWidth: 1.5,
+                          borderRadius: 16,
+                          padding: 12,
+                          marginBottom: 16,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 12,
+                        }}
+                      >
+                        <View
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 20,
+                            backgroundColor: '#00C48C',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <Ionicons name="checkmark-circle" size={24} color="#FFFFFF" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ color: '#00C48C', fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>
+                            META ATINGIDA COM SUCESSO!
+                          </Text>
+                          <Text style={{ color: theme.text, fontSize: 13, fontWeight: '600' }}>
+                            Parabéns! Você alcançou sua meta de leitura.
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+
                     {/* Evolução de Nível */}
                     {(() => {
-                      const progresso = calcularProgressoNivel(resumoSuccess.novoXpTotal);
+                      const xpTotalFinal =
+                        resumoSuccess.novoXpTotalComRecompensas ?? resumoSuccess.novoXpTotal;
+                      const progresso = calcularProgressoNivel(xpTotalFinal);
                       return (
                         <View style={styles.levelProgressContainer}>
                           <View style={styles.levelRow}>

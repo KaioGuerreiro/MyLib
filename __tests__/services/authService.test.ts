@@ -156,6 +156,32 @@ describe('AuthService', () => {
       });
     });
 
+    it('deve retornar ultimaLeituraData quando existir no perfil', async () => {
+      (getDoc as jest.Mock).mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({
+          nome: 'Kaio Gomes',
+          email: 'test@example.com',
+          xpTotal: 150,
+          nivelAtual: 2,
+          ofensivaAtual: 4,
+          ultimaLeituraData: '2026-10-04',
+        }),
+      });
+
+      const profile = await fetchUserProfile('user_123');
+
+      expect(profile).toEqual({
+        id: 'user_123',
+        nome: 'Kaio Gomes',
+        email: 'test@example.com',
+        xpTotal: 150,
+        nivelAtual: 2,
+        ofensivaAtual: 4,
+        ultimaLeituraData: '2026-10-04',
+      });
+    });
+
     it('deve retornar null se documento nao existir', async () => {
       (getDoc as jest.Mock).mockResolvedValueOnce({
         exists: () => false,
