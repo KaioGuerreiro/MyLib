@@ -384,24 +384,27 @@ export default function AchievementsScreen() {
               },
             ]}
           >
-            <View style={styles.goalCardHeader}>
+            {/* Linha superior: Ícone e Badge de Atingida */}
+            <View style={styles.goalCardTopRow}>
               <View style={styles.goalIconWrapper}>
-                <Ionicons name="flash" size={20} color="#FFB800" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.goalTitle, { color: isDark ? '#FFF' : '#1A1824' }]}>
-                  Meta Diária
-                </Text>
-                <Text style={[styles.goalSubtitle, { color: isDark ? '#AAA' : '#777' }]}>
-                  Páginas hoje
-                </Text>
+                <Ionicons name="flash" size={18} color="#FFB800" />
               </View>
               {metas.metaDiaria?.atingida ? (
                 <View style={styles.achievedBadge}>
-                  <Ionicons name="checkmark-circle" size={14} color="#00C48C" />
+                  <Ionicons name="checkmark-circle" size={13} color="#00C48C" />
                   <Text style={styles.achievedBadgeText}>Atingida!</Text>
                 </View>
               ) : null}
+            </View>
+
+            {/* Título e Subtítulo em largura total independente do badge */}
+            <View style={styles.goalTitleContainer}>
+              <Text style={[styles.goalTitle, { color: isDark ? '#FFF' : '#1A1824' }]} numberOfLines={1}>
+                Meta Diária
+              </Text>
+              <Text style={[styles.goalSubtitle, { color: isDark ? '#AAA' : '#777' }]} numberOfLines={1}>
+                Páginas hoje
+              </Text>
             </View>
 
             {metas.metaDiaria ? (
@@ -462,24 +465,27 @@ export default function AchievementsScreen() {
               },
             ]}
           >
-            <View style={styles.goalCardHeader}>
+            {/* Linha superior: Ícone e Badge de Atingida */}
+            <View style={styles.goalCardTopRow}>
               <View style={[styles.goalIconWrapper, { backgroundColor: 'rgba(0, 196, 140, 0.15)' }]}>
-                <Ionicons name="book" size={20} color="#00C48C" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.goalTitle, { color: isDark ? '#FFF' : '#1A1824' }]}>
-                  Meta Mensal
-                </Text>
-                <Text style={[styles.goalSubtitle, { color: isDark ? '#AAA' : '#777' }]}>
-                  Livros no mês
-                </Text>
+                <Ionicons name="book" size={18} color="#00C48C" />
               </View>
               {metas.metaMensal?.atingida ? (
                 <View style={styles.achievedBadge}>
-                  <Ionicons name="checkmark-circle" size={14} color="#00C48C" />
+                  <Ionicons name="checkmark-circle" size={13} color="#00C48C" />
                   <Text style={styles.achievedBadgeText}>Atingida!</Text>
                 </View>
               ) : null}
+            </View>
+
+            {/* Título e Subtítulo em largura total independente do badge */}
+            <View style={styles.goalTitleContainer}>
+              <Text style={[styles.goalTitle, { color: isDark ? '#FFF' : '#1A1824' }]} numberOfLines={1}>
+                Meta Mensal
+              </Text>
+              <Text style={[styles.goalSubtitle, { color: isDark ? '#AAA' : '#777' }]} numberOfLines={1}>
+                Livros no mês
+              </Text>
             </View>
 
             {metas.metaMensal ? (
@@ -992,16 +998,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 14,
   },
+  goalCardTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   goalCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     marginBottom: 12,
   },
+  goalTitleContainer: {
+    marginBottom: 10,
+  },
   goalIconWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
+    width: 34,
+    height: 34,
+    borderRadius: 11,
     backgroundColor: 'rgba(255, 184, 0, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1009,21 +1024,23 @@ const styles = StyleSheet.create({
   goalTitle: {
     fontSize: 14,
     fontWeight: '700',
+    letterSpacing: 0.2,
   },
   goalSubtitle: {
     fontSize: 11,
+    marginTop: 1,
   },
   achievedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     backgroundColor: 'rgba(0, 196, 140, 0.15)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
     borderRadius: 10,
   },
   achievedBadgeText: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: '700',
     color: '#00C48C',
   },

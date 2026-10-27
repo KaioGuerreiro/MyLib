@@ -6,4 +6,5 @@ export interface Usuario {
   nivelAtual: number;
   ofensivaAtual: number;
   ultimaLeituraData?: string | null;
+  avatarId?: string;
 }

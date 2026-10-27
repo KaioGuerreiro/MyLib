@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { Conquista } from '../models/Conquista';
 import { useTheme } from '../theme/ThemeContext';
@@ -90,13 +91,19 @@ export default function AchievementUnlockedModal({
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
+        {/* Desfoque Apple nativo no backdrop */}
+        <BlurView
+          intensity={Platform.OS === 'ios' ? 25 : 35}
+          tint={isDark ? 'dark' : 'light'}
+          style={StyleSheet.absoluteFill}
+        />
         <Animated.View
           style={[
             styles.container,
             {
               opacity: opacityAnim,
               transform: [{ scale: scaleAnim }],
-              backgroundColor: isDark ? '#1C1A2E' : '#FFFFFF',
+              backgroundColor: isDark ? 'rgba(28, 26, 46, 0.96)' : 'rgba(255, 255, 255, 0.98)',
               borderColor: isUnlocked
                 ? isDark
                   ? 'rgba(215, 210, 255, 0.25)'
@@ -104,6 +111,7 @@ export default function AchievementUnlockedModal({
                 : isDark
                 ? 'rgba(255, 255, 255, 0.1)'
                 : 'rgba(0, 0, 0, 0.08)',
+              borderTopColor: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.95)',
               shadowColor: isUnlocked ? '#FFD700' : '#000000',
             },
           ]}
@@ -303,7 +311,7 @@ export default function AchievementUnlockedModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
@@ -311,14 +319,15 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     maxWidth: 340,
-    borderRadius: 28,
+    borderRadius: 30,
+    borderCurve: 'continuous',
     borderWidth: 1.5,
     padding: 24,
     alignItems: 'center',
     shadowColor: '#FFD700',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.25,
-    shadowRadius: 20,
+    shadowRadius: 24,
     elevation: 12,
     overflow: 'hidden',
   },

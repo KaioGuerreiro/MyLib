@@ -2,12 +2,12 @@
 
 > Aplicativo móvel para incentivo, gestão e gamificação do hábito diário de leitura.
 
-![Expo 57](https://img.shields.io/badge/Expo-57-blue.svg)
-![React Native](https://img.shields.io/badge/React%20Native-0.86-61DAFB.svg)
+![Expo 58](https://img.shields.io/badge/Expo-58-blue.svg)
+![React Native](https://img.shields.io/badge/React%20Native-0.88-61DAFB.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6.svg)
 ![Firebase](https://img.shields.io/badge/Firebase-v12-FFCA28.svg)
 ![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-NativeWind%20v4-38B2AC.svg)
-![Jest CI](https://img.shields.io/badge/Tests-100%20passed-brightgreen.svg)
+![Jest CI](https://img.shields.io/badge/Tests-117%20passed-brightgreen.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 ---
@@ -54,7 +54,7 @@
 
 | Camada | Tecnologia |
 |---|---|
-| **Mobile Framework** | React Native 0.86 com Expo 57 (SDK v57) |
+| **Mobile Framework** | React Native 0.88 com Expo 58 (SDK v58) |
 | **Linguagem** | TypeScript (~6.0) |
 | **Estilização** | NativeWind v4 + Tailwind CSS 3.4 |
 | **Efeitos Visuais** | `expo-glass-effect`, `expo-linear-gradient`, `expo-haptics` |

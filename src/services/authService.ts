@@ -7,10 +7,11 @@ import {
   updateProfile,
   User 
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 import { Usuario } from '../models/Usuario';
 import { validatePasswordCriteria } from '../utils/validation';
+import { sincronizarRankingUsuario } from './rankingService';
 
 function normalizeEmail(email: string): string {
   const normalized = email.trim().toLowerCase();
@@ -80,6 +81,7 @@ export async function signUpUser(nome: string, email: string, senha: string): Pr
     xpTotal: 0,
     nivelAtual: 1,
     ofensivaAtual: 0,
+    avatarId: 'owl',
   };
 
   // Envia e-mail de verificação via Firebase Auth
@@ -95,6 +97,8 @@ export async function signUpUser(nome: string, email: string, senha: string): Pr
       ...novoUsuario,
       createdAt: serverTimestamp(),
     });
+    // Inicializa no ranking público (Módulo 5)
+    await sincronizarRankingUsuario(novoUsuario);
   } catch (err: any) {
     console.warn('Não foi possível criar perfil no Firestore (verifique as regras de segurança do Cloud Firestore):', err?.message || err);
   }
@@ -139,6 +143,7 @@ export async function fetchUserProfile(uid: string): Promise<Usuario | null> {
         xpTotal: data.xpTotal || 0,
         nivelAtual: data.nivelAtual || 1,
         ofensivaAtual: data.ofensivaAtual || 0,
+        avatarId: data.avatarId || 'owl',
         ...(data.ultimaLeituraData !== undefined ? { ultimaLeituraData: data.ultimaLeituraData } : {}),
       };
     }
@@ -169,6 +174,7 @@ export function subscribeToUserProfile(
           xpTotal: data.xpTotal !== undefined ? data.xpTotal : 0,
           nivelAtual: data.nivelAtual !== undefined ? data.nivelAtual : 1,
           ofensivaAtual: data.ofensivaAtual !== undefined ? data.ofensivaAtual : 0,
+          avatarId: data.avatarId || 'owl',
           ...(data.ultimaLeituraData !== undefined ? { ultimaLeituraData: data.ultimaLeituraData } : {}),
         });
       }
@@ -177,6 +183,58 @@ export function subscribeToUserProfile(
       console.warn('Erro ao escutar dados do perfil no Firestore:', err);
     }
   );
+}
+
+/**
+ * [Módulo 5 - Perfil] Atualiza o nome de exibição do usuário no Firebase Auth, Firestore e Ranking.
+ */
+export async function updateUserProfileName(uid: string, novoNome: string): Promise<string> {
+  const normalizedName = normalizeName(novoNome);
+  const currentUser = auth.currentUser;
+
+  if (currentUser && currentUser.uid === uid) {
+    await updateProfile(currentUser, { displayName: normalizedName });
+  }
+
+  const userDocRef = doc(db, 'usuarios', uid);
+  await updateDoc(userDocRef, {
+    nome: normalizedName,
+    updatedAt: serverTimestamp(),
+  });
+
+  // Atualiza no ranking público também
+  try {
+    const rankingDocRef = doc(db, 'ranking', uid);
+    await updateDoc(rankingDocRef, {
+      nome: normalizedName,
+      updatedAt: serverTimestamp(),
+    });
+  } catch {
+    // Documento no ranking pode não existir ainda se criado antes
+  }
+
+  return normalizedName;
+}
+
+/**
+ * [Módulo 5 - Perfil] Atualiza o avatar do usuário no Firestore e no Ranking.
+ */
+export async function updateUserProfileAvatar(uid: string, avatarId: string): Promise<void> {
+  const userDocRef = doc(db, 'usuarios', uid);
+  await updateDoc(userDocRef, {
+    avatarId,
+    updatedAt: serverTimestamp(),
+  });
+
+  try {
+    const rankingDocRef = doc(db, 'ranking', uid);
+    await updateDoc(rankingDocRef, {
+      avatarId,
+      updatedAt: serverTimestamp(),
+    });
+  } catch {
+    // Documento no ranking pode não existir ainda
+  }
 }
 
 /**

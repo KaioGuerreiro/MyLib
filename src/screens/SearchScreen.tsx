@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
+  type TextInputInstance,
   FlatList,
   Image,
   ActivityIndicator,
@@ -18,6 +19,8 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../theme/ThemeContext';
 import { useAuth } from '../context/AuthContext';
@@ -51,7 +54,7 @@ const CATEGORIES = [
 ];
 
 export default function SearchScreen() {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
 
@@ -73,7 +76,7 @@ export default function SearchScreen() {
   const [customBookPages, setCustomBookPages] = useState('');
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInputInstance>(null);
 
   const loadRecentSearches = async () => {
     try {
@@ -475,7 +478,7 @@ export default function SearchScreen() {
         /* Estado inicial */
         <FlatList
           data={[]}
-          renderItem={null}
+          renderItem={() => null}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
           ListHeaderComponent={
@@ -689,33 +692,87 @@ export default function SearchScreen() {
                       </Text>
                     </TouchableOpacity>
                   </View>
-                ) : null
+                ) : undefined
               }
             />
           )}
         </>
       )}
 
-      {/* Modal Criar Livro Customizado */}
+      {/* Modal Criar Livro Customizado (Padrão Apple HIG) */}
       <Modal
         visible={isCustomBookModalVisible}
-        animationType="slide"
+        animationType="fade"
         transparent={true}
-        onRequestClose={() => setIsCustomBookModalVisible(false)}
+        onRequestClose={() => {
+          if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          setIsCustomBookModalVisible(false);
+        }}
       >
         <KeyboardAwareScrollView
-          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.7)', padding: 20 }}
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20 }}
           enableOnAndroid={true}
           extraScrollHeight={Platform.OS === 'ios' ? 40 : 100}
           keyboardShouldPersistTaps="handled"
         >
-          <View className="rounded-3xl p-6 border border-cardBorder bg-card shadow-2xl">
+          {/* Desfoque Apple nativo no backdrop */}
+          <BlurView
+            intensity={Platform.OS === 'ios' ? 25 : 35}
+            tint={isDark ? 'dark' : 'light'}
+            style={StyleSheet.absoluteFill}
+          />
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => {
+              if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setIsCustomBookModalVisible(false);
+            }}
+          />
+
+          <View
+            style={{
+              backgroundColor: isDark ? 'rgba(28, 26, 46, 0.96)' : 'rgba(255, 255, 255, 0.98)',
+              borderColor: theme.cardBorder,
+              borderTopColor: isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(255, 255, 255, 0.95)',
+              borderRadius: 28,
+              borderCurve: 'continuous',
+              padding: 22,
+              borderWidth: 1,
+              shadowColor: '#000',
+              shadowOpacity: 0.25,
+              shadowRadius: 24,
+              shadowOffset: { width: 0, height: 10 },
+              elevation: 12,
+            }}
+          >
             <View className="flex-row justify-between items-center mb-5">
-              <Text className="text-lg font-bold text-textPrimary">
-                Adicionar Livro
-              </Text>
-              <TouchableOpacity onPress={() => setIsCustomBookModalVisible(false)}>
-                <Ionicons name="close" size={24} color={theme.text} />
+              <View>
+                <Text className="text-lg font-bold text-textPrimary" style={{ letterSpacing: -0.3 }}>
+                  Adicionar Livro
+                </Text>
+                <Text className="text-xs text-textSecondary mt-0.5">
+                  Cadastre uma obra manualmente na sua estante
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => {
+                  if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setIsCustomBookModalVisible(false);
+                }}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Fechar"
+              >
+                <Ionicons name="close" size={18} color={theme.text} />
               </TouchableOpacity>
             </View>
 
@@ -725,8 +782,8 @@ export default function SearchScreen() {
                   Título do Livro
                 </Text>
                 <TextInput
-                  className="h-12 px-3.5 rounded-xl border border-inputBorder bg-inputBg text-sm text-textPrimary py-0"
-                  style={{ paddingVertical: 0, textAlignVertical: 'center' }}
+                  className="h-12 px-3.5 rounded-2xl border border-inputBorder bg-inputBg text-sm text-textPrimary py-0"
+                  style={{ paddingVertical: 0, textAlignVertical: 'center', borderCurve: 'continuous' }}
                   placeholder="Ex: O Senhor dos Anéis"
                   placeholderTextColor={theme.textMuted}
                   value={customBookTitle}
@@ -739,8 +796,8 @@ export default function SearchScreen() {
                   Autor
                 </Text>
                 <TextInput
-                  className="h-12 px-3.5 rounded-xl border border-inputBorder bg-inputBg text-sm text-textPrimary py-0"
-                  style={{ paddingVertical: 0, textAlignVertical: 'center' }}
+                  className="h-12 px-3.5 rounded-2xl border border-inputBorder bg-inputBg text-sm text-textPrimary py-0"
+                  style={{ paddingVertical: 0, textAlignVertical: 'center', borderCurve: 'continuous' }}
                   placeholder="Ex: J.R.R. Tolkien"
                   placeholderTextColor={theme.textMuted}
                   value={customBookAuthor}
@@ -753,8 +810,8 @@ export default function SearchScreen() {
                   Número de Páginas
                 </Text>
                 <TextInput
-                  className="h-12 px-3.5 rounded-xl border border-inputBorder bg-inputBg text-sm text-textPrimary py-0"
-                  style={{ paddingVertical: 0, textAlignVertical: 'center' }}
+                  className="h-12 px-3.5 rounded-2xl border border-inputBorder bg-inputBg text-sm text-textPrimary py-0"
+                  style={{ paddingVertical: 0, textAlignVertical: 'center', borderCurve: 'continuous' }}
                   placeholder="Ex: 500"
                   placeholderTextColor={theme.textMuted}
                   keyboardType="numeric"
@@ -764,11 +821,15 @@ export default function SearchScreen() {
               </View>
 
               <TouchableOpacity
-                className="h-12 rounded-xl items-center justify-center mt-2 shadow-md bg-primary"
-                onPress={handleAddCustomBook}
-                activeOpacity={0.8}
+                className="h-12 rounded-2xl items-center justify-center mt-2 shadow-md bg-primary"
+                style={{ borderCurve: 'continuous' }}
+                onPress={() => {
+                  if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  handleAddCustomBook();
+                }}
+                activeOpacity={0.85}
               >
-                <Text className="text-xs font-bold text-white">
+                <Text className="text-sm font-bold text-white">
                   Salvar Livro
                 </Text>
               </TouchableOpacity>

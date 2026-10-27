@@ -28,6 +28,7 @@ import ReadingSessionModal from '../components/ReadingSessionModal';
 import { calcularProgressoNivel } from '../utils/gamification';
 import { sincronizarOfensivaUsuario } from '../services/readingSessionService';
 import { fetchUserGoals, MetasUsuario } from '../services/goalService';
+import { getAvatarById } from '../utils/avatars';
 
 const COVER_COLORS = [
   '#2C2B4E',
@@ -44,7 +45,7 @@ export interface HomeScreenProps {
 
 export default function HomeScreen({ navigation }: HomeScreenProps = {}) {
   const { isDark, theme, toggleTheme, toggleAnim } = useTheme();
-  const { user, userData, signOut, refreshUserProfile } = useAuth();
+  const { user, userData, refreshUserProfile } = useAuth();
   const insets = useSafeAreaInsets();
   const [sendingVerification, setSendingVerification] = useState(false);
   const [estante, setEstante] = useState<ItemEstanteCompleto[]>([]);
@@ -132,14 +133,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps = {}) {
     };
   }, [currentReading]);
 
-  const getInitials = (name: string) => {
-    const parts = name.trim().split(' ');
-    if (parts.length >= 2) {
-      return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
-    }
-    return name.slice(0, 2).toUpperCase();
-  };
-
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
@@ -153,21 +146,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps = {}) {
     } finally {
       setRefreshing(false);
     }
-  };
-
-  const handleSignOut = () => {
-    Alert.alert(
-      'Sair da Conta',
-      'Deseja encerrar sua sessão no MyLib?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Sair',
-          style: 'destructive',
-          onPress: () => signOut(),
-        },
-      ]
-    );
   };
 
   const handleResendVerification = async () => {
@@ -252,14 +230,28 @@ export default function HomeScreen({ navigation }: HomeScreenProps = {}) {
         <View className="flex-row items-center justify-between py-3 mb-5">
           <TouchableOpacity
             className="flex-row items-center flex-1 mr-2"
-            onPress={handleSignOut}
+            onPress={() => navigation?.navigate('Perfil')}
             activeOpacity={0.8}
             accessibilityLabel="Opções de perfil e logout"
           >
-            <View className="w-11 h-11 rounded-full items-center justify-center border border-warning/50 bg-warning/25 mr-2.5">
-              <Text className="text-sm font-extrabold text-warning">
-                {getInitials(fullName)}
-              </Text>
+            <View
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: 10,
+                backgroundColor: getAvatarById(userData?.avatarId).fundo,
+                borderWidth: 1.5,
+                borderColor: getAvatarById(userData?.avatarId).cor,
+              }}
+            >
+              <Ionicons
+                name={getAvatarById(userData?.avatarId).icone}
+                size={22}
+                color={getAvatarById(userData?.avatarId).cor}
+              />
             </View>
             <View className="flex-1">
               <Text className="text-sm font-bold tracking-tight text-textPrimary" numberOfLines={1}>
@@ -589,10 +581,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps = {}) {
                   </Text>
                 )}
               </View>
-              <Text className="text-xs font-semibold text-textSecondary">
+              <Text className="text-xs font-semibold text-textSecondary" numberOfLines={1}>
                 Meta Diária
               </Text>
-              <Text className="text-sm font-bold text-textPrimary mt-0.5">
+              <Text className="text-sm font-bold text-textPrimary mt-0.5" numberOfLines={1}>
                 {metas.metaDiaria
                   ? `${metas.metaDiaria.progressoAtual}/${metas.metaDiaria.valorAlvo} pág`
                   : 'Configurar'}
@@ -621,10 +613,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps = {}) {
                   </Text>
                 )}
               </View>
-              <Text className="text-xs font-semibold text-textSecondary">
+              <Text className="text-xs font-semibold text-textSecondary" numberOfLines={1}>
                 Meta do Mês
               </Text>
-              <Text className="text-sm font-bold text-textPrimary mt-0.5">
+              <Text className="text-sm font-bold text-textPrimary mt-0.5" numberOfLines={1}>
                 {metas.metaMensal
                   ? `${metas.metaMensal.progressoAtual}/${metas.metaMensal.valorAlvo} livros`
                   : 'Configurar'}

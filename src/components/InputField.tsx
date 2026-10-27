@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { View, Text, TextInput, Pressable } from 'react-native';
+import { View, Text, TextInput, type TextInputInstance, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeType } from '../theme/colors';
 
@@ -8,7 +8,7 @@ interface InputFieldProps {
   icon: React.ComponentProps<typeof Ionicons>["name"];
   rightIcon?: React.ComponentProps<typeof Ionicons>["name"];
   onRightIconPress?: () => void;
-  inputRef?: React.RefObject<TextInput | null>;
+  inputRef?: React.RefObject<TextInputInstance | null>;
   isFocused: boolean;
   hasError?: boolean;
   errorMessage?: string;
@@ -33,7 +33,7 @@ export function InputField({
   theme,
   inputProps,
 }: InputFieldProps) {
-  const localRef = useRef<TextInput>(null);
+  const localRef = useRef<TextInputInstance>(null);
   const ref = inputRef || localRef;
 
   const iconColor = hasError

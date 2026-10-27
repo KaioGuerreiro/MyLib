@@ -13,8 +13,8 @@ service cloud.firestore {
       allow list: if false;
 
       // Usuário pode criar e atualizar seus próprios dados (XP, nível, ofensiva, última leitura)
-      allow create, update: if isOwner(userId);
-      allow delete: if false;
+      // Permite exclusão pelo próprio usuário (Módulo 5 - Direito ao Esquecimento / LGPD)
+      allow create, update, delete: if isOwner(userId);
 
       // Subcoleção de Estante de Livros
       match /estante/{itemId} {
@@ -22,9 +22,10 @@ service cloud.firestore {
       }
 
       // Subcoleção de Sessões de Leitura (Histórico)
+      // Imutável para edição (update false), permitindo exclusão apenas na limpeza de conta
       match /sessoes/{sessaoId} {
-        allow read, create: if isOwner(userId);
-        allow update, delete: if false;
+        allow read, create, delete: if isOwner(userId);
+        allow update: if false;
       }
 
       // Subcoleção de Conquistas (Módulo 4)
@@ -36,6 +37,14 @@ service cloud.firestore {
       match /metas/{metaId} {
         allow read, write: if isOwner(userId);
       }
+    }
+
+    // Coleção Pública de Ranking (Módulo 5 - Social & Leaderboard)
+    match /ranking/{userId} {
+      // Qualquer usuário autenticado pode consultar o ranking dos leitores
+      allow read: if request.auth != null;
+      // O leitor só pode atualizar ou remover seu próprio registro de ranking
+      allow create, update, delete: if isOwner(userId);
     }
   }
 }

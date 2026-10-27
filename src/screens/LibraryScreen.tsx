@@ -11,13 +11,17 @@ import {
   RefreshControl,
   Modal,
   TextInput,
+  type TextInputInstance,
   TouchableWithoutFeedback,
   Keyboard,
+  Platform,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
 import { useTheme } from '../theme/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { StatusLeitura } from '../models/ItemEstante';
@@ -49,7 +53,7 @@ const COVER_COLORS = [
 ];
 
 export default function LibraryScreen() {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const { user, userData } = useAuth();
   const insets = useSafeAreaInsets();
 
@@ -67,8 +71,8 @@ export default function LibraryScreen() {
   const [savingBook, setSavingBook] = useState<boolean>(false);
   const [focusField, setFocusField] = useState<'author' | 'pages'>('author');
 
-  const authorInputRef = useRef<TextInput>(null);
-  const pagesInputRef = useRef<TextInput>(null);
+  const authorInputRef = useRef<TextInputInstance>(null);
+  const pagesInputRef = useRef<TextInputInstance>(null);
 
   useEffect(() => {
     if (!user?.uid) {
@@ -450,7 +454,7 @@ export default function LibraryScreen() {
         />
       )}
 
-      {/* Modal para Editar Livro */}
+      {/* Modal para Editar Livro (Padrão Apple HIG) */}
       <Modal
         visible={!!editingBook}
         transparent
@@ -458,19 +462,52 @@ export default function LibraryScreen() {
         onRequestClose={handleCloseEditModal}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View className="flex-1 bg-black/70 justify-center p-5">
+          <View className="flex-1 justify-center p-5">
+            {/* Desfoque Apple nativo no backdrop */}
+            <BlurView
+              intensity={Platform.OS === 'ios' ? 25 : 35}
+              tint={isDark ? 'dark' : 'light'}
+              style={StyleSheet.absoluteFill}
+            />
+            <TouchableOpacity
+              style={StyleSheet.absoluteFill}
+              activeOpacity={1}
+              onPress={() => {
+                if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                handleCloseEditModal();
+              }}
+            />
+
             <KeyboardAwareScrollView
               contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
               enableOnAndroid={true}
               keyboardShouldPersistTaps="handled"
             >
-              <View className="rounded-3xl p-6 border border-cardBorder bg-card shadow-2xl">
+              <View
+                style={{
+                  backgroundColor: isDark ? 'rgba(28, 26, 46, 0.96)' : 'rgba(255, 255, 255, 0.98)',
+                  borderColor: theme.cardBorder,
+                  borderTopColor: isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(255, 255, 255, 0.95)',
+                  borderRadius: 28,
+                  borderCurve: 'continuous',
+                  padding: 22,
+                  borderWidth: 1,
+                  shadowColor: '#000',
+                  shadowOpacity: 0.25,
+                  shadowRadius: 24,
+                  shadowOffset: { width: 0, height: 10 },
+                  elevation: 12,
+                }}
+              >
                 {/* Cabeçalho */}
                 <View className="items-center mb-5">
-                  <View className="w-12 h-12 rounded-2xl items-center justify-center mb-2 bg-accent/20">
+                  <View
+                    className="w-12 h-12 rounded-2xl items-center justify-center mb-2 bg-accent/20"
+                    style={{ borderCurve: 'continuous' }}
+                  >
                     <Ionicons name="create-outline" size={26} color={theme.accent} />
                   </View>
-                  <Text className="text-lg font-bold text-center text-textPrimary">
+                  <Text className="text-lg font-bold text-center text-textPrimary" style={{ letterSpacing: -0.3 }}>
                     Editar Detalhes do Livro
                   </Text>
                   {editingBook && (
@@ -485,7 +522,10 @@ export default function LibraryScreen() {
                   <Text className="text-xs font-semibold uppercase tracking-wider mb-1.5 text-label">
                     Nome do Autor:
                   </Text>
-                  <View className="flex-row items-center h-12 px-3.5 rounded-xl border border-inputBorder bg-inputBg">
+                  <View
+                    className="flex-row items-center h-12 px-3.5 rounded-2xl border border-inputBorder bg-inputBg"
+                    style={{ borderCurve: 'continuous' }}
+                  >
                     <Ionicons name="person-outline" size={18} color={theme.textMuted} className="mr-2.5" />
                     <TextInput
                       ref={authorInputRef}
@@ -507,7 +547,10 @@ export default function LibraryScreen() {
                   <Text className="text-xs font-semibold uppercase tracking-wider mb-1.5 text-label">
                     Número Total de Páginas:
                   </Text>
-                  <View className="flex-row items-center h-12 px-3.5 rounded-xl border border-inputBorder bg-inputBg">
+                  <View
+                    className="flex-row items-center h-12 px-3.5 rounded-2xl border border-inputBorder bg-inputBg"
+                    style={{ borderCurve: 'continuous' }}
+                  >
                     <Ionicons name="book-outline" size={18} color={theme.textMuted} className="mr-2.5" />
                     <TextInput
                       ref={pagesInputRef}
@@ -528,19 +571,27 @@ export default function LibraryScreen() {
                 {/* Botões de Ação */}
                 <View className="flex-row gap-3">
                   <TouchableOpacity
-                    className="flex-1 h-12 rounded-xl items-center justify-center border border-cardBorder"
-                    onPress={handleCloseEditModal}
+                    className="flex-1 h-12 rounded-2xl items-center justify-center border border-cardBorder"
+                    style={{ borderCurve: 'continuous' }}
+                    onPress={() => {
+                      if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      handleCloseEditModal();
+                    }}
                     disabled={savingBook}
                     activeOpacity={0.7}
                   >
-                    <Text className="text-xs font-semibold text-textSecondary">
+                    <Text className="text-sm font-semibold text-textSecondary">
                       Cancelar
                     </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    className="flex-1 h-12 rounded-xl items-center justify-center flex-row shadow-md bg-primary"
-                    onPress={handleSaveBookDetails}
+                    className="flex-1 h-12 rounded-2xl items-center justify-center flex-row shadow-md bg-primary"
+                    style={{ borderCurve: 'continuous' }}
+                    onPress={() => {
+                      if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      handleSaveBookDetails();
+                    }}
                     disabled={savingBook}
                     activeOpacity={0.85}
                   >
@@ -549,7 +600,7 @@ export default function LibraryScreen() {
                     ) : (
                       <>
                         <Ionicons name="checkmark" size={18} color="#FFFFFF" className="mr-1.5" />
-                        <Text className="text-xs font-bold text-white">
+                        <Text className="text-sm font-bold text-white">
                           Salvar
                         </Text>
                       </>

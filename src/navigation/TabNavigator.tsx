@@ -12,6 +12,7 @@ import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/b
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { GlassView, GlassContainer, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../theme/ThemeContext';
@@ -22,6 +23,7 @@ import HomeScreen from '../screens/HomeScreen';
 import SearchScreen from '../screens/SearchScreen';
 import LibraryScreen from '../screens/LibraryScreen';
 import AchievementsScreen from '../screens/AchievementsScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -30,12 +32,15 @@ const TAB_ICONS: Record<string, { active: keyof typeof Ionicons.glyphMap; inacti
   'Busca': { active: 'search', inactive: 'search-outline' },
   'Biblioteca': { active: 'library', inactive: 'library-outline' },
   'Conquistas': { active: 'trophy', inactive: 'trophy-outline' },
+  'Perfil': { active: 'person', inactive: 'person-outline' },
 };
 
-const TAB_BAR_HEIGHT = 62;
-const TAB_BAR_RADIUS = 31;
+// Dimensões com proporções e curvatura concêntrica Apple HIG (32 outer - 6 padding = 26 inner)
+const TAB_BAR_HEIGHT = 64;
+const TAB_BAR_RADIUS = 32;
 const PADDING_H = 6;
-const PILL_HEIGHT = 50;
+const PILL_HEIGHT = 52;
+const PILL_RADIUS = 26;
 
 const isGlassSupported = () => {
   try {
@@ -54,17 +59,17 @@ interface TabItemProps {
   theme: ThemeType;
 }
 
-function TabItem({ name, isFocused, onPress, isDark, theme }: TabItemProps) {
+function TabItem({ name, isFocused, onPress, isDark }: TabItemProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const icons = TAB_ICONS[name] ?? { active: 'ellipse', inactive: 'ellipse-outline' };
   const iconName = isFocused ? icons.active : icons.inactive;
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
-      toValue: 0.88,
+      toValue: 0.90,
       useNativeDriver: true,
-      friction: 6,
-      tension: 180,
+      friction: 7,
+      tension: 200,
     }).start();
   };
 
@@ -72,13 +77,14 @@ function TabItem({ name, isFocused, onPress, isDark, theme }: TabItemProps) {
     Animated.spring(scaleAnim, {
       toValue: 1,
       useNativeDriver: true,
-      friction: 5,
-      tension: 140,
+      friction: 6,
+      tension: 160,
     }).start();
   };
 
-  const activeColor = isDark ? '#FFFFFF' : theme.accentText;
-  const inactiveColor = isDark ? 'rgba(178, 182, 202, 0.70)' : '#6B7088';
+  // Cores de alta fidelidade e contraste Apple HIG
+  const activeColor = isDark ? '#FFFFFF' : '#5856D6';
+  const inactiveColor = isDark ? 'rgba(235, 235, 245, 0.55)' : 'rgba(60, 60, 67, 0.58)';
   const color = isFocused ? activeColor : inactiveColor;
 
   return (
@@ -101,7 +107,7 @@ function TabItem({ name, isFocused, onPress, isDark, theme }: TabItemProps) {
             {
               color,
               fontWeight: isFocused ? '600' : '500',
-              opacity: isFocused ? 1 : 0.85,
+              opacity: isFocused ? 1 : 0.82,
             },
           ]}
         >
@@ -121,7 +127,7 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const availableWidth = containerWidth > 0 ? containerWidth - PADDING_H * 2 : 0;
   const tabWidth = availableWidth > 0 ? availableWidth / numTabs : 0;
 
-  // Animação de deslizamento da pílula ativa com física de mola Apple
+  // Animação de deslizamento da pílula ativa com física de mola fluida Apple
   const slideAnim = useRef(new Animated.Value(0)).current;
   const currentX = useRef(0);
 
@@ -142,8 +148,8 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
       const targetX = PADDING_H + state.index * tabWidth;
       Animated.spring(slideAnim, {
         toValue: targetX,
-        friction: 8,
-        tension: 110,
+        friction: 13,
+        tension: 180,
         useNativeDriver: true,
       }).start();
       currentX.current = targetX;
@@ -169,7 +175,7 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     [navigation, state]
   );
 
-  // Pílula ativa translúcida com a cor de destaque do tema (menos transparente, com presença e profundidade)
+  // Pílula ativa com efeito lente de vidro translúcido Apple (Glass Pill)
   const renderHighlightPill = () => {
     if (tabWidth === 0) return null;
 
@@ -181,58 +187,126 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
           {
             width: tabWidth,
             transform: [{ translateX: slideAnim }],
-            backgroundColor: isDark ? 'rgba(145, 132, 217, 0.48)' : 'rgba(108, 92, 231, 0.24)',
-            borderColor: isDark ? 'rgba(215, 210, 255, 0.55)' : 'rgba(108, 92, 231, 0.40)',
-            shadowColor: isDark ? '#9184D9' : '#6C5CE7',
-            shadowOpacity: isDark ? 0.32 : 0.18,
-            shadowOffset: { width: 0, height: 2 },
-            shadowRadius: 6,
-            elevation: 3,
+            shadowColor: isDark ? '#9184D9' : '#2B1B6D',
+            shadowOpacity: isDark ? 0.28 : 0.12,
+            shadowRadius: isDark ? 10 : 8,
+            elevation: isDark ? 4 : 2,
           },
         ]}
       >
+        {/* Desfoque de vidro interno da pílula (duplo vidro translúcido Apple) */}
+        <BlurView
+          intensity={isDark ? 30 : 40}
+          tint={isDark ? 'systemUltraThinMaterialDark' : 'systemUltraThinMaterialLight'}
+          style={[StyleSheet.absoluteFill, { borderRadius: PILL_RADIUS, overflow: 'hidden' }]}
+        />
+
         {USE_NATIVE_LIQUID_GLASS && (
           <GlassView
-            style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+            style={[StyleSheet.absoluteFill, { borderRadius: PILL_RADIUS }]}
             glassEffectStyle="clear"
-            tintColor={isDark ? 'rgba(145, 132, 217, 0.30)' : 'rgba(108, 92, 231, 0.18)'}
+            tintColor={isDark ? 'rgba(165, 148, 249, 0.20)' : 'rgba(108, 92, 231, 0.12)'}
             isInteractive
           />
         )}
-      </Animated.View>
-    );
-  };
 
-  // Fundo translúcido com tonalidade personalizada e materiais autênticos Apple
-  const renderGlassBackground = () => (
-    <>
-      {USE_NATIVE_LIQUID_GLASS ? (
-        <GlassView
-          style={[StyleSheet.absoluteFill, { borderRadius: TAB_BAR_RADIUS }]}
-          glassEffectStyle="regular"
-          tintColor={isDark ? 'rgba(42, 34, 68, 0.55)' : 'rgba(238, 233, 255, 0.60)'}
-          colorScheme={isDark ? 'dark' : 'light'}
-        />
-      ) : (
+        {/* Tonalidade Apple translúcida da pílula */}
         <View
           style={[
             StyleSheet.absoluteFill,
             {
-              borderRadius: TAB_BAR_RADIUS,
-              backgroundColor: isDark ? 'rgba(28, 26, 46, 0.90)' : 'rgba(248, 246, 255, 0.92)',
+              borderRadius: PILL_RADIUS,
+              backgroundColor: isDark
+                ? 'rgba(255, 255, 255, 0.08)'
+                : 'rgba(255, 255, 255, 0.70)',
             },
           ]}
         />
+
+        {/* Brilho especular na curvatura superior da pílula */}
+        <LinearGradient
+          colors={
+            isDark
+              ? ['rgba(255, 255, 255, 0.30)', 'rgba(255, 255, 255, 0.05)', 'transparent']
+              : ['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.25)', 'transparent']
+          }
+          locations={[0, 0.45, 1]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={[StyleSheet.absoluteFill, { borderRadius: PILL_RADIUS }]}
+        />
+
+        {/* Borda chanfrada de precisão óptica */}
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              borderRadius: PILL_RADIUS,
+              borderWidth: 1,
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(108, 92, 231, 0.16)',
+              borderTopColor: isDark ? 'rgba(255, 255, 255, 0.45)' : '#FFFFFF',
+              borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(108, 92, 231, 0.20)',
+            },
+          ]}
+        />
+      </Animated.View>
+    );
+  };
+
+  // Fundo translúcido com camadas ópticas de vidro líquido Apple
+  const renderGlassBackground = () => (
+    <>
+      {/* 1. Base BlurView nativo iOS / Android (garante desfoque de vidro real mesmo sem iOS 26) */}
+      <BlurView
+        intensity={isDark ? 92 : 88}
+        tint={isDark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
+        style={[StyleSheet.absoluteFill, { borderRadius: TAB_BAR_RADIUS, overflow: 'hidden' }]}
+      />
+
+      {/* 2. Suporte Nativo a Liquid Glass (UIVisualEffectView / UIGlassEffect em iOS 26+) */}
+      {USE_NATIVE_LIQUID_GLASS && (
+        <GlassView
+          style={[StyleSheet.absoluteFill, { borderRadius: TAB_BAR_RADIUS }]}
+          glassEffectStyle="regular"
+          tintColor={isDark ? 'rgba(42, 34, 68, 0.35)' : 'rgba(238, 233, 255, 0.40)'}
+          colorScheme={isDark ? 'dark' : 'light'}
+        />
       )}
 
-      {/* Sutil brilho especular de luz na curvatura superior do vidro com tonalidade do tema */}
+      {/* 3. Tonalidade atmosférica translúcida (Apple Material Tint) */}
+      <View
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            borderRadius: TAB_BAR_RADIUS,
+            backgroundColor: isDark
+              ? 'rgba(20, 16, 36, 0.48)'
+              : 'rgba(255, 255, 255, 0.52)',
+          },
+        ]}
+      />
+
+      {/* 4. Brilho especular Apple (Luz refletida no bisel curvado superior) */}
       <LinearGradient
         colors={
           isDark
-            ? ['rgba(210, 206, 253, 0.16)', 'rgba(145, 132, 217, 0.04)', 'transparent']
-            : ['rgba(255, 255, 255, 0.95)', 'rgba(238, 233, 255, 0.40)', 'transparent']
+            ? ['rgba(255, 255, 255, 0.24)', 'rgba(215, 210, 255, 0.04)', 'transparent']
+            : ['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.35)', 'transparent']
         }
-        locations={[0, 0.4, 1]}
+        locations={[0, 0.35, 1]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={[StyleSheet.absoluteFill, { borderRadius: TAB_BAR_RADIUS }]}
+      />
+
+      {/* 5. Sutil caústica/profundidade na curvatura inferior do vidro */}
+      <LinearGradient
+        colors={
+          isDark
+            ? ['transparent', 'rgba(0, 0, 0, 0.22)']
+            : ['transparent', 'rgba(108, 92, 231, 0.05)']
+        }
+        locations={[0.65, 1]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={[StyleSheet.absoluteFill, { borderRadius: TAB_BAR_RADIUS }]}
@@ -243,16 +317,17 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const bottomMargin = Math.max(insets.bottom, 12);
 
   const borderStyle = {
-    borderColor: isDark ? 'rgba(145, 132, 217, 0.25)' : 'rgba(108, 92, 231, 0.16)',
-    borderTopColor: isDark ? 'rgba(210, 206, 253, 0.45)' : 'rgba(255, 255, 255, 0.98)',
+    borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.75)',
+    borderTopColor: isDark ? 'rgba(255, 255, 255, 0.42)' : 'rgba(255, 255, 255, 0.98)',
+    borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.06)',
   };
 
   const shadowStyle = {
-    shadowColor: isDark ? '#7A68C9' : '#4C3ACB',
-    shadowOpacity: isDark ? 0.35 : 0.12,
-    shadowRadius: isDark ? 20 : 18,
-    elevation: isDark ? 10 : 8,
-    shadowOffset: { width: 0, height: 8 },
+    shadowColor: isDark ? '#000000' : '#1E124A',
+    shadowOpacity: isDark ? 0.45 : 0.12,
+    shadowRadius: isDark ? 24 : 20,
+    elevation: isDark ? 12 : 8,
+    shadowOffset: { width: 0, height: 10 },
   };
 
   const containerContent = (
@@ -304,6 +379,7 @@ export function TabNavigator() {
       <Tab.Screen name="Busca" component={SearchScreen} />
       <Tab.Screen name="Biblioteca" component={LibraryScreen} />
       <Tab.Screen name="Conquistas" component={AchievementsScreen} />
+      <Tab.Screen name="Perfil" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
@@ -311,8 +387,8 @@ export function TabNavigator() {
 const styles = StyleSheet.create({
   tabBarShadowWrapper: {
     position: 'absolute',
-    left: 20,
-    right: 20,
+    left: 18,
+    right: 18,
     height: TAB_BAR_HEIGHT,
     borderRadius: TAB_BAR_RADIUS,
   },
@@ -321,17 +397,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: TAB_BAR_HEIGHT,
     borderRadius: TAB_BAR_RADIUS,
+    borderCurve: 'continuous',
     alignItems: 'center',
     paddingHorizontal: PADDING_H,
     borderWidth: 1,
+    overflow: 'hidden',
   },
   highlightPill: {
     position: 'absolute',
     height: PILL_HEIGHT,
-    borderRadius: 20,
+    borderRadius: PILL_RADIUS,
     top: (TAB_BAR_HEIGHT - PILL_HEIGHT) / 2,
-    borderWidth: 1,
     zIndex: 1,
+    shadowOffset: { width: 0, height: 2 },
   },
   tabItem: {
     flex: 1,
@@ -343,10 +421,11 @@ const styles = StyleSheet.create({
   tabItemContent: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 3,
+    gap: 2,
   },
   tabLabel: {
-    fontSize: 11,
-    letterSpacing: 0.2,
+    fontSize: 10.5,
+    letterSpacing: 0.25,
+    marginTop: 2,
   },
 });

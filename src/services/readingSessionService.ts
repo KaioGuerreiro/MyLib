@@ -26,6 +26,7 @@ import { Conquista } from '../models/Conquista';
 import { Meta } from '../models/Meta';
 import { checkAndUnlockAchievements } from './achievementService';
 import { atualizarProgressoMetasSessao } from './goalService';
+import { sincronizarRankingUsuario } from './rankingService';
 
 export interface RegistrarSessaoParams {
   usuarioId: string;
@@ -231,6 +232,21 @@ export async function registrarSessaoLeitura(
     }
   } catch (errConquistas) {
     console.warn('Erro ao avaliar conquistas após sessão:', errConquistas);
+  }
+
+  // 10. [Módulo 5] Atualizar Ranking Público do Leitor
+  try {
+    await sincronizarRankingUsuario({
+      id: usuarioId,
+      nome: (usuarioAtual as any).nome || 'Leitor',
+      xpTotal: finalXpTotal,
+      nivelAtual: novoNivel,
+      ofensivaAtual: resultadoOfensiva.novaOfensiva,
+      ultimaLeituraData: hojeStr,
+      avatarId: (usuarioAtual as any).avatarId || 'owl',
+    });
+  } catch (errRanking) {
+    console.warn('Erro ao sincronizar ranking após sessão:', errRanking);
   }
 
   return {

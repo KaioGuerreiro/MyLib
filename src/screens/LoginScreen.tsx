@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import {
   View,
   Text,
-  TextInput,
+  type TextInputInstance,
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
@@ -41,7 +41,7 @@ export default function LoginScreen({ navigation }: { navigation: NavigationProp
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const shakePasswordAnim = useRef(new Animated.Value(0)).current;
-  const passwordRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInputInstance>(null);
 
   const insets = useSafeAreaInsets();
 

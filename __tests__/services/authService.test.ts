@@ -87,6 +87,7 @@ describe('AuthService', () => {
         xpTotal: 0,
         nivelAtual: 1,
         ofensivaAtual: 0,
+        avatarId: 'owl',
       });
     });
 
@@ -153,6 +154,7 @@ describe('AuthService', () => {
         xpTotal: 100,
         nivelAtual: 2,
         ofensivaAtual: 5,
+        avatarId: 'owl',
       });
     });
 
@@ -179,6 +181,7 @@ describe('AuthService', () => {
         nivelAtual: 2,
         ofensivaAtual: 4,
         ultimaLeituraData: '2026-10-04',
+        avatarId: 'owl',
       });
     });
 

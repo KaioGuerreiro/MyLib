@@ -15,6 +15,7 @@ import {
   AppState,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../theme/ThemeContext';
 import { ItemEstanteCompleto } from '../services/bookshelfService';
@@ -323,6 +324,12 @@ export default function ReadingSessionModal({
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.modalOverlay}>
+          {/* Desfoque Apple nativo no backdrop */}
+          <BlurView
+            intensity={Platform.OS === 'ios' ? 25 : 35}
+            tint="dark"
+            style={StyleSheet.absoluteFill}
+          />
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={styles.avoidingView}
@@ -962,7 +969,7 @@ export default function ReadingSessionModal({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
     justifyContent: 'flex-end',
   },
   avoidingView: {
@@ -972,19 +979,25 @@ const styles = StyleSheet.create({
   sheetContainer: {
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
+    borderCurve: 'continuous',
     borderTopWidth: 1,
     maxHeight: '92%',
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: -8 },
+    elevation: 16,
   },
   grabberContainer: {
     alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 4,
+    paddingTop: 10,
+    paddingBottom: 6,
   },
   grabber: {
-    width: 44,
+    width: 38,
     height: 5,
-    borderRadius: 3,
+    borderRadius: 2.5,
   },
   scrollContent: {
     paddingHorizontal: 24,

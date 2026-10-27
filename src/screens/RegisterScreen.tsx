@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import {
   View,
   Text,
-  TextInput,
+  type TextInputInstance,
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
@@ -59,9 +59,9 @@ export default function RegisterScreen({
   const shakePasswordAnim = useRef(new Animated.Value(0)).current;
   const shakeConfirmPasswordAnim = useRef(new Animated.Value(0)).current;
 
-  const emailRef = useRef<TextInput>(null);
-  const passwordRef = useRef<TextInput>(null);
-  const confirmPasswordRef = useRef<TextInput>(null);
+  const emailRef = useRef<TextInputInstance>(null);
+  const passwordRef = useRef<TextInputInstance>(null);
+  const confirmPasswordRef = useRef<TextInputInstance>(null);
 
   const insets = useSafeAreaInsets();
 

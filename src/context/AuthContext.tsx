@@ -8,8 +8,11 @@ import {
   sendPasswordReset, 
   signOutUser, 
   fetchUserProfile,
-  subscribeToUserProfile
+  subscribeToUserProfile,
+  updateUserProfileName,
+  updateUserProfileAvatar
 } from '../services/authService';
+import { excluirContaUsuario } from '../services/accountService';
 
 interface AuthContextData {
   user: User | null;
@@ -20,6 +23,9 @@ interface AuthContextData {
   resetPassword: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshUserProfile: () => Promise<void>;
+  updateName: (nome: string) => Promise<string>;
+  updateAvatar: (avatarId: string) => Promise<void>;
+  deleteAccount: (senhaConfirmacao?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
@@ -107,6 +113,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateName = async (nome: string): Promise<string> => {
+    if (!user) throw new Error('Usuário não autenticado.');
+    const updated = await updateUserProfileName(user.uid, nome);
+    if (userData) {
+      setUserData({ ...userData, nome: updated });
+    }
+    return updated;
+  };
+
+  const updateAvatar = async (avatarId: string): Promise<void> => {
+    if (!user) throw new Error('Usuário não autenticado.');
+    await updateUserProfileAvatar(user.uid, avatarId);
+    if (userData) {
+      setUserData({ ...userData, avatarId });
+    }
+  };
+
+  const deleteAccount = async (senhaConfirmacao?: string): Promise<void> => {
+    if (!user) throw new Error('Usuário não autenticado.');
+    await excluirContaUsuario(user.uid, senhaConfirmacao);
+    setUser(null);
+    setUserData(null);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -118,6 +148,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         resetPassword,
         signOut,
         refreshUserProfile,
+        updateName,
+        updateAvatar,
+        deleteAccount,
       }}
     >
       {children}
