@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import { AndroidImportance, SchedulableTriggerInputTypes } from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -80,7 +81,7 @@ export async function solicitarPermissaoNotificacoes(): Promise<boolean> {
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync(ANDROID_CHANNEL_ID, {
         name: 'Lembretes de Leitura',
-        importance: Notifications.AndroidImportance.HIGH,
+        importance: AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#6C5CE7',
       });
@@ -213,7 +214,7 @@ export async function agendarLembreteDiario(
             data: { screen: 'HomeScreen' },
           },
           trigger: {
-            type: Notifications.SchedulableTriggerInputTypes.DATE,
+            type: SchedulableTriggerInputTypes.DATE,
             date: item.data,
             channelId: ANDROID_CHANNEL_ID,
           },
