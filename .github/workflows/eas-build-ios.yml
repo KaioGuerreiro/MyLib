@@ -1,0 +1,82 @@
+name: EAS iOS Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Perfil de Build do EAS'
+        required: true
+        default: 'preview-simulator'
+        type: choice
+        options:
+          - preview-simulator
+          - preview
+          - production
+          - development
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: 🧪 Validação (Lint, Tipos & Testes)
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: 🟢 Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 📦 Instalar Dependências
+        run: npm ci
+
+      - name: 🔍 Executar Verificações CI
+        run: npm run test:ci
+
+  build-ios:
+    name: 🚀 Disparar EAS Build iOS
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: 🟢 Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 📦 Instalar Dependências
+        run: npm ci
+
+      - name: 🛠️ Configurar EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 🍏 Determinar Perfil do Build
+        id: select-profile
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "profile=${{ github.event.inputs.profile }}" >> $GITHUB_OUTPUT
+          else
+            echo "profile=production" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🔨 Executar EAS Build
+        run: |
+          eas build \
+            --platform ios \
+            --profile ${{ steps.select-profile.outputs.profile }} \
+            --non-interactive
